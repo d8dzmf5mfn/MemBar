@@ -1,0 +1,28 @@
+# Xcode
+*.xcworkspace
+*.xcuserdata
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.app
+build/
+
+# macOS
+.DS_Store
+*.swp
+*.lock
+*~
+
+# Environment
+.env
+.env.local
+
+# IDEs
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/
+
+# Swift Package Manager
+.build/
+Package.resolved
