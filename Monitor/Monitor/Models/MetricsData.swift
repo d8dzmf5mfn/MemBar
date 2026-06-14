@@ -1,11 +1,12 @@
 import Foundation
 
-struct SystemSnapshot {
-    var cpu: CPUSnapshot
-    var memory: MemorySnapshot
-    var network: NetworkSnapshot
-    var `self`: SelfSnapshot
-}
+// MARK: - Data snapshots
+// =====================================================
+// Plain value types — `init` is auto-synthesized by the compiler.
+// `collectXxxInfo()` helpers in MonitorEngine call these initializers
+// from `nonisolated` contexts; the auto-synthesized init is `nonisolated`
+// by default for structs with no actor isolation, which is what we want.
+// =====================================================
 
 struct CPUSnapshot {
     var usagePercent: Double
@@ -14,15 +15,6 @@ struct CPUSnapshot {
     var userPercent: Double
     var idlePercent: Double
     var timestamp: Date
-
-    nonisolated init(usagePercent: Double, perCoreUsage: [Double], systemPercent: Double, userPercent: Double, idlePercent: Double, timestamp: Date) {
-        self.usagePercent = usagePercent
-        self.perCoreUsage = perCoreUsage
-        self.systemPercent = systemPercent
-        self.userPercent = userPercent
-        self.idlePercent = idlePercent
-        self.timestamp = timestamp
-    }
 }
 
 struct MemorySnapshot {
@@ -36,19 +28,6 @@ struct MemorySnapshot {
     var appMemoryBytes: UInt64
     var usagePercent: Double
     var timestamp: Date
-
-    nonisolated init(totalBytes: UInt64, usedBytes: UInt64, freeBytes: UInt64, wiredBytes: UInt64, compressedBytes: UInt64, purgeableBytes: UInt64, speculativeBytes: UInt64, appMemoryBytes: UInt64, usagePercent: Double, timestamp: Date) {
-        self.totalBytes = totalBytes
-        self.usedBytes = usedBytes
-        self.freeBytes = freeBytes
-        self.wiredBytes = wiredBytes
-        self.compressedBytes = compressedBytes
-        self.purgeableBytes = purgeableBytes
-        self.speculativeBytes = speculativeBytes
-        self.appMemoryBytes = appMemoryBytes
-        self.usagePercent = usagePercent
-        self.timestamp = timestamp
-    }
 }
 
 struct NetworkSnapshot {
@@ -56,33 +35,7 @@ struct NetworkSnapshot {
     var uploadSpeed: Double
     var smoothedDownloadSpeed: Double
     var smoothedUploadSpeed: Double
-    var totalDownloaded: UInt64
-    var totalUploaded: UInt64
     var timestamp: Date
-
-    nonisolated init(downloadSpeed: Double, uploadSpeed: Double, smoothedDownloadSpeed: Double, smoothedUploadSpeed: Double, totalDownloaded: UInt64, totalUploaded: UInt64, timestamp: Date) {
-        self.downloadSpeed = downloadSpeed
-        self.uploadSpeed = uploadSpeed
-        self.smoothedDownloadSpeed = smoothedDownloadSpeed
-        self.smoothedUploadSpeed = smoothedUploadSpeed
-        self.totalDownloaded = totalDownloaded
-        self.totalUploaded = totalUploaded
-        self.timestamp = timestamp
-    }
-}
-
-struct SelfSnapshot {
-    var memoryUsageMB: Double
-    var cpuUsagePercent: Double
-    var powerEstimateMW: Double
-    var timestamp: Date
-
-    nonisolated init(memoryUsageMB: Double, cpuUsagePercent: Double, powerEstimateMW: Double, timestamp: Date) {
-        self.memoryUsageMB = memoryUsageMB
-        self.cpuUsagePercent = cpuUsagePercent
-        self.powerEstimateMW = powerEstimateMW
-        self.timestamp = timestamp
-    }
 }
 
 struct ThermalSnapshot {
@@ -90,12 +43,9 @@ struct ThermalSnapshot {
     var batteryTempCelsius: Double?
     var timestamp: Date
 
-    init(state: ProcessInfo.ThermalState, batteryTempCelsius: Double?, timestamp: Date) {
-        self.state = state
-        self.batteryTempCelsius = batteryTempCelsius
-        self.timestamp = timestamp
-    }
-
+    /// Localized label for the current thermal state.
+    /// `label` was promoted from a private extension here so it's
+    /// discoverable in one place.
     var label: String {
         switch state {
         case .nominal:  "正常"
@@ -105,9 +55,4 @@ struct ThermalSnapshot {
         @unknown default: "未知"
         }
     }
-}
-
-enum AppMode: String, CaseIterable {
-    case menuBar
-    case fullApp
 }
