@@ -40,17 +40,31 @@ trap cleanup EXIT
 
 # ----- Build -----
 if [[ $SKIP_BUILD -eq 0 ]]; then
-    echo "==> Building $SCHEME ($CONFIG)..."
+    echo "==> Building $SCHEME ($CONFIG) (unsigned)..."
     cd "$REPO_ROOT/Monitor"
+    # CODE_SIGNING_ALLOWED=NO skips Xcode's signing step entirely so
+    # the build doesn't fail on Xcode 27's `com.apple.provenance`
+    # xattr issue. We do our own ad-hoc re-sign in the next block.
     xcodebuild \
         -project Monitor.xcodeproj \
         -scheme "$SCHEME" \
         -configuration "$CONFIG" \
         -destination 'platform=macOS' \
         -derivedDataPath build \
-        clean build | tail -20
+        CODE_SIGNING_ALLOWED=NO \
+        clean build 2>&1 | tail -20
 else
     echo "==> Skipping build (--skip-build), reusing $APP_PATH"
+fi
+
+# Now that the build produced a *plain* .app, strip any provenance /
+# finder xattrs and ad-hoc sign it ourselves. The .app is unsigned at
+# this point so the re-sign is the only signature the user will see.
+if [[ -d "$APP_PATH" ]]; then
+    echo "==> Stripping extended attributes and ad-hoc signing $APP_PATH..."
+    find "$APP_PATH" -exec xattr -d com.apple.provenance {} \; 2>/dev/null || true
+    xattr -cr "$APP_PATH" 2>/dev/null || true
+    codesign --force --deep --sign - "$APP_PATH"
 fi
 
 if [[ ! -d "$APP_PATH" ]]; then
