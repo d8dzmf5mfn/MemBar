@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Popover with the 4x2 data table panel.
         popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 260, height: 220)
+        popover.contentSize = NSSize(width: 280, height: 280)
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView(monitor: monitor)
         )
@@ -100,7 +100,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // and `NSSystemColorsDidChange`, but the former is not exposed
         // to Swift and the latter fires too aggressively.)
         themeObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .initial]) { [weak self] _, _ in
-            self?.renderer?.render()
+            // KVO callbacks land on the thread that mutated the value,
+            // which is the main thread for `NSApp.effectiveAppearance`.
+            MainActor.assumeIsolated { self?.renderer?.render() }
         }
     }
 
@@ -179,6 +181,7 @@ final class StatusBarIconView: NSView {
 // and reports the new content size so the icon view can resize to fit.
 // =====================================================
 
+@MainActor
 final class MenuBarRenderer {
     private let monitor: SystemMonitor
     private let onImage: (NSImage, NSSize) -> Void
@@ -206,7 +209,10 @@ final class MenuBarRenderer {
     func start() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.render()
+            // Timer fires on the main run loop, so we're already on
+            // the main actor — `assumeIsolated` lets us call the
+            // @MainActor-isolated `render()` synchronously.
+            MainActor.assumeIsolated { self?.render() }
         }
         render()
     }

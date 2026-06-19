@@ -9,6 +9,10 @@ DerivedData/
 *.app
 build/
 
+# Distribution packages (built locally, uploaded to GitHub releases instead)
+*.dmg
+*.pkg
+
 # macOS
 .DS_Store
 *.swp

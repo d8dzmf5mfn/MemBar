@@ -5,44 +5,57 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Release](https://img.shields.io/badge/download-latest-brightgreen)](https://github.com/d8dzmf5mfn/MemBar/releases/latest)
 
-**A lightweight macOS menu bar system monitor.** A pixel-art pufferfish in the menu bar swells as memory fills — the fish IS the gauge. Click it for a compact popover with CPU, network, and thermal readings.
+**A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory pressure rises. Click it for a popover with a big ring chart, live network throughput, CPU, and battery temperature.
 
-轻量级 macOS 菜单栏系统监控工具。菜单栏的像素风河豚随内存占用膨胀——鱼就是仪表盘。点击展开弹窗查看 CPU / 网络 / 温度。
+轻量级 macOS 菜单栏系统监控工具。菜单栏小圆环随内存压力填充,点开是带大圆环、实时网速、CPU 和电池温度的弹窗。
 
 ---
 
 ## Screenshots / 截图
 
-| Memory gauge (pufferfish) | Popover |
-| :---: | :---: |
-| A 24×16 pixel-art pufferfish with 4 stages: streamlined (0-30%), plump (30-60%), spiky warning (60-85%), and full-spike panic (85%+). Corner spikes throb on Stage 4. | Compact popover with memory mode / network mode / CPU / temperature readouts. |
+| Menu bar | Popover (memory mode) | Popover (network mode) |
+| :---: | :---: | :---: |
+| 16-pt donut + percentage (or `↓X ↑Y` in network mode), auto-tinted by system appearance. | 92-pt color-coded ring, end-cap dot that follows the trim, percentage in the center, used/total bytes, status caption. | Two stacked 16-bar rolling charts (download / upload) with the latest bar pulsing between samples. |
 
 ---
 
 ## Features / 功能
 
-### 📊 Menu Bar / 菜单栏
-- **Pufferfish memory gauge** — a pixel-art pufferfish that swells across 4 stages as memory fills:
-  - **0-30%** — streamlined "content mochi" with a single dot eye
-  - **30-60%** — plumper "curious balloon" with an open mouth
-  - **60-85%** — round + 4 spikes, flat eye "mildly flustered"
-  - **85-100%** — full spikes + vertical panic eye + gaping mouth "maximum chonk"
-- **Stage 4 corner spikes throb** every heartbeat (0.5s) — the fish is under pressure
-- **Template-mode rendering** — the pufferfish picks up your system accent color automatically
-- **Auto-tinting** with system appearance (light/dark mode)
+### 📊 Menu bar / 菜单栏
+- **Live donut gauge** — 16-pt ring, system-foreground tint via `NSImage.isTemplate = true`, redrawn at 2 Hz.
+- **Two display modes**:
+  - *memory* — percentage text alongside the ring
+  - *network* — `↓1.2MB ↑234KB` download/upload text
+- Mode is picked from the popover and persisted to `UserDefaults`.
+- Re-renders on appearance change (light ⇄ dark, Auto Dark Mode).
 
 ### 🖱️ Popover / 弹窗
-Click the pufferfish to open a compact popover:
-- **Memory panel** — used / total bytes readout with a donut gauge
-- **Network panel** — real-time download/upload speeds with history chart
-- 4-row data table: **内存 / CPU / 网络 / 温度**
-- **Color picker** — choose the pufferfish's accent color
-- "退出" button to quit
+Click the menu bar icon to open a 280 × 280 SwiftUI popover:
+- **Mode picker** — segmented control at the top: 内存占用 / 网速.
+- **Memory mode** — a 92-pt ring with a 10-pt stroke:
+  - Color shifts **green → orange → red** at 60 % / 85 %
+  - A small **end-cap dot** rides the trim end (`.rotationEffect` driven by the same fraction)
+  - The percentage is centered as a 22-pt rounded monospaced number with `.contentTransition(.numericText())` so the digits roll over smoothly
+  - A subtle **shadow halo** appears above 85 %
+  - Used / total bytes and a `稳定 / 偏高 / 告急` status caption round out the row
+  - The whole ring is GPU-rendered via `.drawingGroup()` for retina crispness
+- **Network mode** — two stacked rolling-window bar charts (download in blue, upload in green):
+  - 16 bars per chart, 2 s per sample, history ≈ 32 s
+  - Each bar's height is normalized to the window's max, so spikes always fill the chart
+  - The **rightmost (latest) bar** runs a `TimelineView` that nudges its height ±8 % at ~0.88 Hz, so the chart feels alive between samples (no frozen gap)
+  - 1-pt baseline rule under each row keeps the eye anchored when traffic is near zero
+- **Data table** — 内存 / CPU / 网络 / 温度, with monospaced values and per-row accent color.
+- **退出** button to quit.
 
-### ⚙️ System / 系统
-- 2-second refresh interval
-- Native macOS APIs only — no third-party dependencies
-- ~1,200 lines of Swift total
+### ⚙️ Engineering / 实现
+- Swift 6 + strict concurrency; `@MainActor @Observable` `SystemMonitor` posts a `systemMonitorDidRefresh` notification on each 2 s tick.
+- Native macOS APIs only — no third-party dependencies:
+  - `host_statistics` for CPU
+  - `vm_statistics64` for memory
+  - `getifaddrs` for network throughput (delta between samples)
+  - `IORegistry` for battery temperature
+- All charts animate via value-driven `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
+- ~1,200 lines of Swift.
 
 ---
 
@@ -62,7 +75,7 @@ brew install --cask membar
 1. Download `MemBar.dmg` from the latest release
 2. Open the DMG file
 3. Drag **MemBar.app** into the **Applications** folder
-4. Launch MemBar from Applications — the donut chart appears in the menu bar
+4. Launch MemBar from Applications — the donut appears in the menu bar
 
 > **Note**: On first launch, macOS may show an unidentified developer warning. Right-click MemBar.app in Applications and select "Open" to bypass.
 >
@@ -72,13 +85,13 @@ brew install --cask membar
 
 ## Usage / 使用
 
-1. Launch MemBar — a pixel-art pufferfish appears in the menu bar (top-right)
-2. **Click** the pufferfish to open the popover
-3. In the popover, use the **Picker** to switch between Memory and Network modes
-4. Use the **color picker** to customize the pufferfish's accent color
-5. **Right-click** the pufferfish for a "Quit MemBar" menu
+1. Launch MemBar — the donut gauge appears in the menu bar (top-right).
+2. **Click** the donut to open the popover.
+3. In the popover, use the **picker** to switch between 内存占用 and 网速.
+4. The picker choice is remembered between launches.
+5. **Right-click** the donut for a "Quit MemBar" menu.
 
-The pufferfish auto-tints with your system's light/dark appearance. Enable macOS **Auto Dark Mode** (System Settings → Appearance → Auto) to make it follow the time of day automatically.
+The gauge auto-tints with your system's light / dark appearance. Enable macOS **Auto Dark Mode** (System Settings → Appearance → Auto) to make it follow the time of day automatically.
 
 ---
 
@@ -120,38 +133,35 @@ The build script:
 Monitor/
 ├── Monitor.xcodeproj/
 ├── Monitor/
-│   ├── MemBarApp.swift              # @main App, MenuBarExtra, NSStatusItem
+│   ├── MemBarApp.swift              # @main App, AppDelegate, NSStatusItem,
+│   │                               # StatusBarIconView, MenuBarRenderer
+│   │                               # (Core Graphics donut for the menu bar)
 │   ├── Models/
-│   │   └── MetricsData.swift        # CPUSnapshot / MemorySnapshot / NetworkSnapshot / ThermalSnapshot
+│   │   └── MetricsData.swift        # CPUSnapshot / MemorySnapshot /
+│   │                               # NetworkSnapshot / ThermalSnapshot
 │   ├── MonitorEngine/
-│   │   ├── CPUInfo.swift            # CPU usage via host_statistics
-│   │   ├── MemoryInfo.swift         # Memory via vm_statistics64
-│   │   ├── NetworkInfo.swift        # Network throughput via getifaddrs
-│   │   ├── SystemMonitor.swift      # @MainActor @Observable, 2Hz refresh
-│   │   └── TemperatureInfo.swift    # Battery temp via IORegistry
+│   │   ├── CPUInfo.swift            # host_statistics
+│   │   ├── MemoryInfo.swift         # vm_statistics64
+│   │   ├── NetworkInfo.swift        # getifaddrs
+│   │   ├── SystemMonitor.swift      # @MainActor @Observable, 2 Hz refresh,
+│   │   │                           # posts .systemMonitorDidRefresh
+│   │   └── TemperatureInfo.swift    # IORegistry
 │   ├── Views/
-│   │   ├── MenuBarView.swift        # NSPopover root: Picker + 4-row data
-│   │   ├── PixelPufferfishView.swift # SwiftUI view rendering the pufferfish to NSImage
-│   │   ├── PufferfishSprite.swift   # Pixel matrices + CGContext renderer for all 4 stages
-│   │   ├── PufferfishPanel.swift    # Color picker panel
-│   │   ├── PixelWhaleView.swift     # Legacy whale view (reserved)
-│   │   └── WhaleSprite.swift        # Whale constants
-│   ├── Assets.xcassets/             # AppIcon, AccentColor
-│   └── Fonts/                       # Caveat-Regular, RockSalt-Regular (reserved)
-├── scripts/
-│   └── build-dmg.sh                 # DMG packaging script
-└── MemBar.dmg                       # Pre-built disk image
+│   │   └── MenuBarView.swift        # popover: mode picker, donut + bar
+│   │                               # charts, data rows, quit button
+│   └── Assets.xcassets/             # AppIcon, AccentColor
+└── scripts/
+    └── build-dmg.sh                 # DMG packaging script
 ```
-
-~1,700 lines of Swift, all native, no third-party dependencies.
 
 ---
 
 ## Tech stack / 技术栈
 
 - **Swift 6** with strict concurrency
-- **SwiftUI** for the popover + menu bar icon (`MenuBarExtra`)
-- **Core Graphics** for pixel-art rasterization (`CGContext`, hand-crafted 24×16 pixel matrices)
+- **SwiftUI** for the popover (`@Observable` + `Bindable`)
+- **AppKit** for `NSStatusItem` + the menu bar renderer (`CGContext` donut rasterized to a template-mode `NSImage`)
+- **Core Graphics** for the menu bar pixel rendering
 - **macOS 15+** native APIs: `host_statistics`, `vm_statistics64`, `getifaddrs`, `IORegistry`
 
 ---
