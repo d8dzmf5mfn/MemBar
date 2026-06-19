@@ -54,8 +54,11 @@ Click the menu bar icon to open a 280 × 280 SwiftUI popover:
   - `vm_statistics64` for memory
   - `getifaddrs` for network throughput (delta between samples)
   - `IORegistry` for battery temperature
-- All charts animate via value-driven `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
-- ~1,200 lines of Swift.
+- All charts animate via value-driven `.animation(.spring, value:)` or `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
+- The memory donut uses `.spring(response: 0.6, dampingFraction: 0.75)` — a slight overshoot makes each GC event feel alive.
+- The latest network bar (`LiveBar`) interpolates from the previous sample to the current one over 2 seconds with an ease-out quadratic curve (instead of a static ±8% pulse), so the chart flows smoothly between 2-second refresh ticks.
+- All bar heights use `.spring(response: 0.55, dampingFraction: 0.8)` for a bouncy, natural transition.
+- ~1,440 lines of Swift.
 
 ---
 
