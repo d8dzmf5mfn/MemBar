@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Popover with the 4x2 data table panel.
         popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 280, height: 280)
+        popover.contentSize = NSSize(width: 280, height: 300)
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView(monitor: monitor)
         )

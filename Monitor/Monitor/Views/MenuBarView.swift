@@ -152,8 +152,8 @@ struct MenuBarView: View {
             }
             .frame(width: donutSize + 2 * donutInset, height: donutSize + 2 * donutInset)
             .drawingGroup()  // GPU-render the stroked shape, smoother on retina
-            .animation(.easeInOut(duration: 0.45), value: memoryFraction)
-            .animation(.easeInOut(duration: 0.35), value: ringColor)
+            .animation(.spring(response: 0.6, dampingFraction: 0.75), value: memoryFraction)
+            .animation(.easeInOut(duration: 0.25), value: ringColor)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(formatPercent(monitor.memory.usagePercent))
@@ -195,7 +195,7 @@ struct MenuBarView: View {
                 .offset(y: -radius)
                 .rotationEffect(.degrees(360 * memoryFraction))
                 .opacity(0.95)
-                .animation(.easeInOut(duration: 0.45), value: memoryFraction)
+                .animation(.spring(response: 0.6, dampingFraction: 0.75), value: memoryFraction)
         }
     }
 
@@ -340,13 +340,13 @@ struct MenuBarView: View {
         RoundedRectangle(cornerRadius: 1.8, style: .continuous)
             .fill(barColor)
             .frame(width: barWidth, height: barHeight)
-            .animation(.easeInOut(duration: 0.4), value: value)
+            .animation(.spring(response: 0.55, dampingFraction: 0.8), value: value)
     }
 
     // MARK: - Data rows
 
     private var dataRows: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 5) {
             row(icon: "memorychip",
                 label: "内存",
                 primary: formatBytes(monitor.memory.usedBytes),
@@ -497,10 +497,12 @@ struct MenuBarView: View {
 
 // MARK: - LiveBar
 // =====================================================
-// Rightmost (most recent) bar of the network chart. Wrapped in a
-// TimelineView so it can subtly pulse (~0.88 Hz, ±8% height) between
-// the 2 s data samples — without that, the chart feels frozen until
-// the next SystemMonitor refresh tick.
+// Rightmost (most recent) bar of the network chart. Instead of a
+// frozen bar that only jumps at each 2 s sample, this view interpolates
+// from the previous value to the new value using an ease-out quadratic
+// curve, so the bar smoothly "fills" between refreshes. A subtle
+// breathing wave (3% amplitude, ~0.88 Hz) keeps the chart feeling alive
+// even when traffic is steady.
 // =====================================================
 private struct LiveBar: View {
     let value: Double
@@ -509,21 +511,37 @@ private struct LiveBar: View {
     let usableHeight: CGFloat
     let tint: Color
 
+    @State private var previousValue: Double = 0
+    @State private var lastUpdate: Date = .now
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-            let now = timeline.date.timeIntervalSinceReferenceDate
-            let ratio = maxValue > 0 ? CGFloat(value / maxValue) : 0
-            // A smooth 0.88 Hz sine modulates the height ±8% so the
-            // bar looks like it is "breathing" while the system
-            // monitor waits for the next sample.
-            let pulse: CGFloat = value > 0 ? 1.0 + 0.08 * sin(now * 5.5) : 1.0
-            let barHeight = max(value > 0 ? 2 : 0, usableHeight * ratio * pulse)
-            let barColor: Color = value > 0 ? tint : tint.opacity(0.22)
+        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+            let elapsed = timeline.date.timeIntervalSince(lastUpdate)
+            let progress = min(elapsed / 2.0, 1.0)       // 2 s = full refresh
+            // Ease-out quadratic: fast start, gentle finish
+            let easedProgress = 1.0 - (1.0 - progress) * (1.0 - progress)
+            let effectiveValue = previousValue + (value - previousValue) * easedProgress
+
+            let ratio = maxValue > 0 ? CGFloat(effectiveValue / maxValue) : 0
+            // Subtle breathing wave on top of the interpolation —
+            // 3 % amplitude keeps it organic without fighting the grow.
+            let breathe: CGFloat = effectiveValue > 0 ? 1.0 + 0.03 * sin(elapsed * 5.5) : 1.0
+            let barHeight = max(effectiveValue > 0 ? 2 : 0, usableHeight * ratio * breathe)
+            let barColor: Color = effectiveValue > 0 ? tint : tint.opacity(0.22)
 
             RoundedRectangle(cornerRadius: 1.8, style: .continuous)
                 .fill(barColor)
                 .frame(width: barWidth, height: barHeight)
-                .animation(.easeInOut(duration: 0.4), value: value)
+        }
+        .onChange(of: value) { old, new in
+            // When SystemMonitor pushes a new sample, we record the
+            // old value as the interpolation start point and reset the
+            // clock. The bar then smoothly transitions from old → new
+            // over the next 2 seconds. Skipping very small changes so
+            // the bar doesn't glitch on noise.
+            guard abs(new - old) > 0.001 else { return }
+            previousValue = old
+            lastUpdate = .now
         }
     }
 }
