@@ -53,48 +53,15 @@ nonisolated func collectCPUInfo(previousTicks: [CPUResult]? = nil) -> (snapshot:
         vm_deallocate(mach_task_self_, vm_address_t(bitPattern: info), vm_size_t(Int(infoCount) * MemoryLayout<integer_t>.size))
     }
 
-    // Calculate delta-based percentages
-    var perCore: [Double] = []
-    var totalUsed: UInt64 = 0
-    var totalAll: UInt64 = 0
-
-    for i in 0..<count {
-        let cur = currentTicks[i]
-        let prev = previousTicks?[safe: i] ?? CPUResult()
-
-        let dUser   = cur.user   &- prev.user
-        let dSystem = cur.system &- prev.system
-        let dIdle   = cur.idle   &- prev.idle
-        let dNice   = cur.nice   &- prev.nice
-
-        let dTotal  = dUser &+ dSystem &+ dIdle &+ dNice
-        let dUsed   = dUser &+ dSystem &+ dNice
-
-        if dTotal > 0 {
-            perCore.append(Double(dUsed) / Double(dTotal) * 100.0)
-            totalUsed &+= dUsed
-            totalAll  &+= dTotal
-        } else {
-            perCore.append(0)
-        }
-    }
-
-    let usage: Double = totalAll > 0 ? Double(totalUsed) / Double(totalAll) * 100.0 : 0
-    let totalUser   = currentTicks.reduce(0) { $0 &+ $1.user }
-    let totalSystem = currentTicks.reduce(0) { $0 &+ $1.system }
-    let totalIdle   = currentTicks.reduce(0) { $0 &+ $1.idle }
-
-    let total = totalUser &+ totalSystem &+ totalIdle
-    let systemPct: Double = total > 0 ? Double(totalSystem) / Double(total) * 100.0 : 0
-    let userPct:   Double = total > 0 ? Double(totalUser) / Double(total) * 100.0 : 0
-    let idlePct:   Double = total > 0 ? Double(totalIdle) / Double(total) * 100.0 : 0
+    let usage = calculateCPUUsage(previous: previousTicks, current: currentTicks)
+    let statePercents = calculateCPUStatePercents(previous: previousTicks, current: currentTicks)
 
     let snap = CPUSnapshot(
-        usagePercent: usage,
-        perCoreUsage: perCore,
-        systemPercent: systemPct,
-        userPercent: userPct,
-        idlePercent: idlePct,
+        usagePercent: usage.usagePercent,
+        perCoreUsage: usage.perCoreUsage,
+        systemPercent: statePercents.systemPercent,
+        userPercent: statePercents.userPercent,
+        idlePercent: statePercents.idlePercent,
         timestamp: Date()
     )
     return (snap, currentTicks)

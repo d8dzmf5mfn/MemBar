@@ -82,10 +82,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Resize the view if the rendered image grew/shrank.
             if self.iconView.frame.size != newSize {
                 self.iconView.frame = NSRect(origin: .zero, size: newSize)
+                self.statusItem.length = newSize.width
             }
             self.iconView.image = nsImage
             self.iconView.needsDisplay = true
         }
+        statusItem.button?.setAccessibilityLabel("MemBar system monitor")
 
         // Re-render the menu-bar icon when the system appearance changes
         // (light ⇄ dark, or high-contrast variants). The NSImage is
@@ -110,10 +112,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let event = NSApp.currentEvent
 
         // Right-click → quit menu.
-        if event?.type == .rightMouseUp {
+        if event?.type == .rightMouseDown {
             let menu = NSMenu()
             menu.addItem(withTitle: "Quit MemBar", action: #selector(quit), keyEquivalent: "q")
             statusItem.menu = menu
+            statusItem.button?.performClick(nil)
             DispatchQueue.main.async { [weak self] in self?.statusItem.menu = nil }
             return
         }

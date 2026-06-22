@@ -21,4 +21,21 @@ final class CPUCalculationsTests: XCTestCase {
         XCTAssertEqual(result.perCoreUsage.count, 1)
         XCTAssertEqual(result.perCoreUsage[0], 50, accuracy: 0.001)
     }
+
+    func test_multiCoreStatePercents_useDeltaTicksAcrossCores() {
+        let previous = [
+            CPUResult(user: 10, system: 10, idle: 80, nice: 0),
+            CPUResult(user: 50, system: 10, idle: 40, nice: 0)
+        ]
+        let current = [
+            CPUResult(user: 20, system: 20, idle: 100, nice: 0),
+            CPUResult(user: 70, system: 20, idle: 60, nice: 0)
+        ]
+
+        let result = calculateCPUStatePercents(previous: previous, current: current)
+
+        XCTAssertEqual(result.userPercent, 33.333, accuracy: 0.001)
+        XCTAssertEqual(result.systemPercent, 22.222, accuracy: 0.001)
+        XCTAssertEqual(result.idlePercent, 44.444, accuracy: 0.001)
+    }
 }
