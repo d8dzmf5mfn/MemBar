@@ -8,4 +8,13 @@ final class StatusBarIconViewTests: XCTestCase {
 
         XCTAssertFalse(view.isFlipped)
     }
+
+    func test_menuBarRendererDrawsMemoryArcInReversedDirection() {
+        XCTAssertTrue(MenuBarRenderer.donutArcClockwise)
+        XCTAssertEqual(
+            MenuBarRenderer.donutArcEndAngle(for: 0.25),
+            0,
+            accuracy: 0.0001
+        )
+    }
 }

@@ -209,6 +209,8 @@ final class MenuBarRenderer {
     private static let strokeWidth: CGFloat = 2.5
     private static let gap: CGFloat = 5            // gap between donut and label
     private static let fontSize: CGFloat = 11      // ~NSFont.smallSystemFontSize
+    static let donutArcStartAngle: CGFloat = .pi / 2
+    static let donutArcClockwise = true
 
     init(monitor: SystemMonitor, onImage: @escaping (NSImage, NSSize) -> Void) {
         self.monitor = monitor
@@ -273,6 +275,12 @@ final class MenuBarRenderer {
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let size = (text as NSString).size(withAttributes: attrs)
         return ceil(size.width)
+    }
+
+    static func donutArcEndAngle(for fillRatio: Double) -> CGFloat {
+        let clampedRatio = max(0, min(1, fillRatio))
+        let sweep: CGFloat = .pi * 2 * CGFloat(clampedRatio)
+        return donutArcStartAngle - sweep
     }
 
     // MARK: - Render
@@ -342,7 +350,8 @@ final class MenuBarRenderer {
         )
 
         // ---- 2. Foreground arc (filled portion) ----
-        // The arc grows clockwise on screen from 12 o'clock. At 0% nothing
+        // The arc grows counterclockwise on screen from 12 o'clock. At 0%
+        // nothing
         // is drawn — the icon is "empty" so the user knows memory is idle.
         // We deliberately do NOT draw a faint background ring, because:
         //   1) macOS template-mode NSImage treats the alpha mask with a
@@ -352,15 +361,14 @@ final class MenuBarRenderer {
         //      and visually conflict with the foreground arc, killing the
         //      "growing" effect that makes the gauge readable.
         // CG `addArc` semantics (Y-flipped context):
-        //   - clockwise: false + end > start   → short arc, growing CCW in
-        //     CG math = visually CW on screen after the Y flip
-        //   - For sweep > 180° we still use end = start + sweep; CG will
+        //   - clockwise: true + end < start    → short arc, growing CW in
+        //     CG math = visually CCW on screen after the Y flip
+        //   - For sweep > 180° we still use end = start - sweep; CG will
         //     take the long way around (wrapping past 2π) and the arc
-        //     still grows CW on screen.
+        //     still grows CCW on screen.
         //   - For sweep == 2π (i.e. 100%) the arc closes back to start.
         let fillRatio = max(0, min(1, memPct / 100.0))
         if fillRatio > 0 {
-            let sweep: CGFloat = .pi * 2 * CGFloat(fillRatio)
             ctx.setLineWidth(Self.strokeWidth)
             ctx.setLineCap(.round)
             // Opaque white pixels; AppKit tints with the system foreground
@@ -372,9 +380,9 @@ final class MenuBarRenderer {
             fgPath.addArc(
                 center: CGPoint(x: cx, y: cy),
                 radius: bgRadius,
-                startAngle: .pi / 2,
-                endAngle: .pi / 2 + sweep,
-                clockwise: false
+                startAngle: Self.donutArcStartAngle,
+                endAngle: Self.donutArcEndAngle(for: fillRatio),
+                clockwise: Self.donutArcClockwise
             )
             ctx.addPath(fgPath)
             ctx.strokePath()
