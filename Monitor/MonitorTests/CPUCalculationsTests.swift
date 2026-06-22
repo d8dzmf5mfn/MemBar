@@ -1,6 +1,7 @@
 import XCTest
 @testable import MemBar
 
+@MainActor
 final class CPUCalculationsTests: XCTestCase {
     func test_firstSample_returnsZeroUsage() {
         let current = [CPUResult(user: 10, system: 10, idle: 80, nice: 0)]

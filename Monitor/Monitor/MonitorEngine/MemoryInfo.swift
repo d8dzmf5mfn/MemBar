@@ -15,7 +15,12 @@ nonisolated func collectMemoryInfo() -> MemorySnapshot {
         return MemorySnapshot(totalBytes: 0, usedBytes: 0, freeBytes: 0, wiredBytes: 0, compressedBytes: 0, purgeableBytes: 0, speculativeBytes: 0, appMemoryBytes: 0, usagePercent: 0, timestamp: Date())
     }
 
-    let pageSize = UInt64(vm_page_size)
+    var pageSizeValue: vm_size_t = 0
+    guard host_page_size(host, &pageSizeValue) == KERN_SUCCESS else {
+        return MemorySnapshot(totalBytes: 0, usedBytes: 0, freeBytes: 0, wiredBytes: 0, compressedBytes: 0, purgeableBytes: 0, speculativeBytes: 0, appMemoryBytes: 0, usagePercent: 0, timestamp: Date())
+    }
+
+    let pageSize = UInt64(pageSizeValue)
     let total = ProcessInfo.processInfo.physicalMemory
 
     let freeBytes = UInt64(vmStat.free_count) * pageSize

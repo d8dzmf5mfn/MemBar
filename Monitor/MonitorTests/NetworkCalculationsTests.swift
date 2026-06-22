@@ -1,6 +1,7 @@
 import XCTest
 @testable import MemBar
 
+@MainActor
 final class NetworkCalculationsTests: XCTestCase {
     func test_counterWrap_doesNotCreateSyntheticSpike() {
         let previous = NetworkSnapshotBaseline(

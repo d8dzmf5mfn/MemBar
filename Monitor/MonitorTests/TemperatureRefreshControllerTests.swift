@@ -1,6 +1,7 @@
 import XCTest
 @testable import MemBar
 
+@MainActor
 final class TemperatureRefreshControllerTests: XCTestCase {
     func test_refreshIfNeeded_onlyRunsWhenIntervalElapsed() {
         let provider = CountingTemperatureProvider()

@@ -1,6 +1,7 @@
 import XCTest
 @testable import MemBar
 
+@MainActor
 final class MemoryCalculationsTests: XCTestCase {
     func test_totalZero_returnsZeroUsage() {
         let result = calculateMemoryUsage(

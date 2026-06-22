@@ -8,7 +8,7 @@
 #   ./scripts/build-dmg.sh MyName.dmg     # custom DMG name
 #   ./scripts/build-dmg.sh --skip-build   # reuse last xcodebuild output
 #
-# Requirements: Xcode 27+, macOS 15+
+# Requirements: macOS 15+, Swift 6 toolchain (for example Xcode 16 / Xcode 27 beta)
 
 set -euo pipefail
 
@@ -57,12 +57,8 @@ else
     echo "==> Skipping build (--skip-build), reusing $APP_PATH"
 fi
 
-# Now that the build produced a *plain* .app, strip any provenance /
-# finder xattrs and ad-hoc sign it ourselves. The .app is unsigned at
-# this point so the re-sign is the only signature the user will see.
 if [[ -d "$APP_PATH" ]]; then
-    echo "==> Stripping extended attributes and ad-hoc signing $APP_PATH..."
-    find "$APP_PATH" -exec xattr -d com.apple.provenance {} \; 2>/dev/null || true
+    echo "==> Ad-hoc signing $APP_PATH for local distribution..."
     xattr -cr "$APP_PATH" 2>/dev/null || true
     codesign --force --deep --sign - "$APP_PATH"
 fi
@@ -96,6 +92,8 @@ if [[ -f "$DMG_OUTPUT" ]]; then
     SIZE=$(du -h "$DMG_OUTPUT" | cut -f1)
     echo ""
     echo "✓ Built $DMG_OUTPUT ($SIZE)"
+    echo ""
+    echo "Note: GitHub release builds still need Developer ID signing and notarization."
     echo ""
     echo "Next: create a GitHub release and attach this DMG."
     echo "  gh release create v1.1.0 $DMG_OUTPUT --title 'MemBar v1.1.0' --notes '...'"

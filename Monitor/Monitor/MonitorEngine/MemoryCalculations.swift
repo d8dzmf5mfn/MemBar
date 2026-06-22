@@ -5,7 +5,7 @@ struct MemoryUsageResult {
     let usagePercent: Double
 }
 
-func calculateMemoryUsage(
+nonisolated func calculateMemoryUsage(
     totalBytes: UInt64,
     freeBytes: UInt64,
     inactiveBytes: UInt64,

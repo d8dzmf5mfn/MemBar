@@ -18,7 +18,7 @@ struct NetworkRateResult {
     let baseline: NetworkSnapshotBaseline
 }
 
-func calculateNetworkRates(
+nonisolated func calculateNetworkRates(
     previous: NetworkSnapshotBaseline?,
     current: [InterfaceCounter],
     now: Date

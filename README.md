@@ -7,7 +7,7 @@
 
 **A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory usage rises. Click it for a popover with a big ring chart, live network throughput, CPU, and battery temperature.
 
-轻量级 macOS 菜单栏系统监控工具。菜单栏小圆环随内存压力填充,点开是带大圆环、实时网速、CPU 和电池温度的弹窗。
+轻量级 macOS 菜单栏系统监控工具。菜单栏小圆环随内存使用填充,点开是带大圆环、实时网速、CPU 和电池温度的弹窗。
 
 ---
 
@@ -22,7 +22,7 @@
 ## Features / 功能
 
 ### 📊 Menu bar / 菜单栏
-- **Live donut gauge** — 16-pt ring, system-foreground tint via `NSImage.isTemplate = true`, redrawn at 2 Hz.
+- **Live donut gauge** — 16-pt ring, system-foreground tint via `NSImage.isTemplate = true`, redrawn only when displayed state changes.
 - **Two display modes**:
   - *memory* — percentage text alongside the ring
   - *network* — `↓1.2MB ↑234KB` download/upload text
@@ -42,7 +42,7 @@ Click the menu bar icon to open a 280 × 280 SwiftUI popover:
 - **Network mode** — two stacked rolling-window bar charts (download in blue, upload in green):
   - 16 bars per chart, 2 s per sample, history ≈ 32 s
   - Each bar's height is normalized to the window's max, so spikes always fill the chart
-  - The **rightmost (latest) bar** runs a `TimelineView` that nudges its height ±8 % at ~0.88 Hz, so the chart feels alive between samples (no frozen gap)
+  - The latest bar interpolates smoothly between real samples instead of adding decorative fake activity
   - 1-pt baseline rule under each row keeps the eye anchored when traffic is near zero
 - **Data table** — 内存 / CPU / 网络 / 温度, with monospaced values and per-row accent color.
 - **退出** button to quit.
@@ -55,8 +55,8 @@ Click the menu bar icon to open a 280 × 280 SwiftUI popover:
   - `getifaddrs` for network throughput (delta between samples)
   - `IORegistry` for battery temperature
 - All charts animate via value-driven `.animation(.spring, value:)` or `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
-- The memory donut uses `.spring(response: 0.6, dampingFraction: 0.75)` — a slight overshoot makes each GC event feel alive.
-- The latest network bar (`LiveBar`) interpolates from the previous sample to the current one over 2 seconds with an ease-out quadratic curve (instead of a static ±8% pulse), so the chart flows smoothly between 2-second refresh ticks.
+- The memory donut uses `.spring(response: 0.6, dampingFraction: 0.75)` for smooth transitions.
+- The latest network bar (`LiveBar`) interpolates from the previous sample to the current one over 2 seconds with an ease-out quadratic curve, so the chart flows smoothly between refresh ticks.
 - All bar heights use `.spring(response: 0.55, dampingFraction: 0.8)` for a bouncy, natural transition.
 - ~1,440 lines of Swift.
 
@@ -101,7 +101,7 @@ The gauge auto-tints with your system's light / dark appearance. Enable macOS **
 ## Build from source / 从源码构建
 
 ```bash
-# Requires Xcode 27+ and macOS 15+
+# Requires macOS 15+ and a Swift 6 toolchain (Xcode 16 / Xcode 27 beta both work)
 git clone https://github.com/d8dzmf5mfn/MemBar.git
 cd MemBar/Monitor
 open Monitor.xcodeproj
@@ -126,7 +126,11 @@ DEVELOPER_DIR="$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
 The build script:
 1. Runs `xcodebuild` in Release configuration
 2. Locates the built `MemBar.app` in DerivedData
-3. Creates a `MemBar.dmg` using `hdiutil` with a drag-to-Applications layout
+3. Clears extended attributes, ad-hoc signs the local app bundle, and creates a `MemBar.dmg` using `hdiutil`
+
+Local DMG builds are ad-hoc signed only.
+
+GitHub release builds still need Developer ID signing and notarization.
 
 ---
 
