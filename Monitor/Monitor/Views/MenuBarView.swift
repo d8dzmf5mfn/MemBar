@@ -52,12 +52,6 @@ struct MenuBarView: View {
             chartSection
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 10)
-                .transition(
-                    .asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.96)),
-                        removal: .opacity
-                    )
-                )
 
             Divider()
                 .padding(.horizontal, 12)
@@ -88,7 +82,7 @@ struct MenuBarView: View {
             // diff the next refresh tick in the new color.
             isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua]) != nil
         }
-        .animation(.easeInOut(duration: 0.25), value: monitor.menuBarMode)
+        .animation(.smooth(duration: 0.32), value: monitor.menuBarMode)
     }
 
     // MARK: - Picker
@@ -106,9 +100,15 @@ struct MenuBarView: View {
 
     @ViewBuilder
     private var chartSection: some View {
-        switch monitor.menuBarMode {
-        case .memory: donutSection
-        case .network: networkSection
+        ZStack {
+            switch monitor.menuBarMode {
+            case .memory:
+                donutSection
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+            case .network:
+                networkSection
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+            }
         }
     }
 
@@ -152,7 +152,7 @@ struct MenuBarView: View {
             }
             .frame(width: donutSize + 2 * donutInset, height: donutSize + 2 * donutInset)
             .drawingGroup()  // GPU-render the stroked shape, smoother on retina
-            .animation(.spring(response: 0.6, dampingFraction: 0.75), value: memoryFraction)
+            .animation(.smooth(duration: 0.5), value: memoryFraction)
             .animation(.easeInOut(duration: 0.25), value: ringColor)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -195,7 +195,7 @@ struct MenuBarView: View {
                 .offset(y: -radius)
                 .rotationEffect(.degrees(360 * memoryFraction))
                 .opacity(0.95)
-                .animation(.spring(response: 0.6, dampingFraction: 0.75), value: memoryFraction)
+                .animation(.smooth(duration: 0.5), value: memoryFraction)
         }
     }
 
@@ -340,7 +340,7 @@ struct MenuBarView: View {
         RoundedRectangle(cornerRadius: 1.8, style: .continuous)
             .fill(barColor)
             .frame(width: barWidth, height: barHeight)
-            .animation(.spring(response: 0.55, dampingFraction: 0.8), value: value)
+            .animation(.smooth(duration: 0.45), value: value)
     }
 
     // MARK: - Data rows
@@ -513,7 +513,7 @@ private struct LiveBar: View {
     @State private var lastUpdate: Date = .now
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(lastUpdate)
             let progress = min(elapsed / 2.0, 1.0)       // 2 s = full refresh
             // Ease-out quadratic: fast start, gentle finish

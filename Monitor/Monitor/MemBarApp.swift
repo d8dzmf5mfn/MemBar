@@ -163,8 +163,6 @@ final class StatusBarIconView: NSView {
     weak var target: AnyObject?
     var action: Selector?
 
-    override var isFlipped: Bool { true }
-
     override func draw(_ dirtyRect: NSRect) {
         // No background fill — transparent pixels of the template mask
         // let the menu bar show through.
