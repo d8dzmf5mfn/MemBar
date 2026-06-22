@@ -8,6 +8,8 @@
 
 /* Begin PBXFileReference section */
 		45158B2C2FDA464B00EF6C65 /* Monitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Monitor.app; path = MemBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000022FDA500100EF6C65 /* MemBarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MemBarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000032FDA500100EF6C65 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,12 +18,27 @@
 			path = Monitor;
 			sourceTree = "<group>";
 		};
+		A10000012FDA500100EF6C65 /* MonitorTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MonitorTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXBuildFile section */
+		A10000042FDA500100EF6C65 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000032FDA500100EF6C65 /* XCTest.framework */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		45158B292FDA464B00EF6C65 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+			);
+		};
+		A10000052FDA500100EF6C65 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				A10000042FDA500100EF6C65 /* XCTest.framework in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -31,6 +48,7 @@
 			isa = PBXGroup;
 			children = (
 				45158B2E2FDA464B00EF6C65 /* Monitor */,
+				A10000012FDA500100EF6C65 /* MonitorTests */,
 				45158B2D2FDA464B00EF6C65 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,6 +57,7 @@
 			isa = PBXGroup;
 			children = (
 				45158B2C2FDA464B00EF6C65 /* Monitor.app */,
+				A10000022FDA500100EF6C65 /* MemBarTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -64,6 +83,27 @@
 			productReference = 45158B2C2FDA464B00EF6C65 /* Monitor.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A10000082FDA500100EF6C65 /* MemBarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100000D2FDA500100EF6C65 /* Build configuration list for PBXNativeTarget "MemBarTests" */;
+			buildPhases = (
+				A10000072FDA500100EF6C65 /* Sources */,
+				A10000052FDA500100EF6C65 /* Frameworks */,
+				A10000062FDA500100EF6C65 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A100000A2FDA500100EF6C65 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000012FDA500100EF6C65 /* MonitorTests */,
+			);
+			name = MemBarTests;
+			productName = MemBarTests;
+			productReference = A10000022FDA500100EF6C65 /* MemBarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -76,6 +116,10 @@
 				TargetAttributes = {
 					45158B2B2FDA464B00EF6C65 = {
 						CreatedOnToolsVersion = 27.0;
+					};
+					A10000082FDA500100EF6C65 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 45158B2B2FDA464B00EF6C65;
 					};
 				};
 			};
@@ -94,12 +138,28 @@
 			projectRoot = "";
 			targets = (
 				45158B2B2FDA464B00EF6C65 /* Monitor */,
+				A10000082FDA500100EF6C65 /* MemBarTests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXContainerItemProxy section */
+		A10000092FDA500100EF6C65 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 45158B242FDA464B00EF6C65 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 45158B2B2FDA464B00EF6C65;
+			remoteInfo = Monitor;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXResourcesBuildPhase section */
 		45158B2A2FDA464B00EF6C65 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		A10000062FDA500100EF6C65 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -112,7 +172,20 @@
 			files = (
 			);
 		};
+		A10000072FDA500100EF6C65 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A100000A2FDA500100EF6C65 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 45158B2B2FDA464B00EF6C65 /* Monitor */;
+			targetProxy = A10000092FDA500100EF6C65 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		45158B352FDA464D00EF6C65 /* Debug configuration for PBXProject "Monitor" */ = {
@@ -295,6 +368,48 @@
 			};
 			name = Release;
 		};
+		A100000B2FDA500100EF6C65 /* Debug configuration for PBXNativeTarget "MemBarTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.banana.MemBarTests;
+				PRODUCT_NAME = MemBarTests;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MemBar.app/Contents/MacOS/MemBar";
+			};
+			name = Debug;
+		};
+		A100000C2FDA500100EF6C65 /* Release configuration for PBXNativeTarget "MemBarTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.banana.MemBarTests;
+				PRODUCT_NAME = MemBarTests;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MemBar.app/Contents/MacOS/MemBar";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -311,6 +426,14 @@
 			buildConfigurations = (
 				45158B382FDA464D00EF6C65 /* Debug configuration for PBXNativeTarget "Monitor" */,
 				45158B392FDA464D00EF6C65 /* Release configuration for PBXNativeTarget "Monitor" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		A100000D2FDA500100EF6C65 /* Build configuration list for PBXNativeTarget "MemBarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100000B2FDA500100EF6C65 /* Debug configuration for PBXNativeTarget "MemBarTests" */,
+				A100000C2FDA500100EF6C65 /* Release configuration for PBXNativeTarget "MemBarTests" */,
 			);
 			defaultConfigurationName = Release;
 		};
