@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Release](https://img.shields.io/badge/download-latest-brightgreen)](https://github.com/d8dzmf5mfn/MemBar/releases/latest)
 
-**A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory pressure rises. Click it for a popover with a big ring chart, live network throughput, CPU, and battery temperature.
+**A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory usage rises. Click it for a popover with a big ring chart, live network throughput, CPU, and battery temperature.
 
 轻量级 macOS 菜单栏系统监控工具。菜单栏小圆环随内存压力填充,点开是带大圆环、实时网速、CPU 和电池温度的弹窗。
 
@@ -31,7 +31,7 @@
 
 ### 🖱️ Popover / 弹窗
 Click the menu bar icon to open a 280 × 280 SwiftUI popover:
-- **Mode picker** — segmented control at the top: 内存占用 / 网速.
+- **Mode picker** — segmented control at the top: 内存使用 / 网速.
 - **Memory mode** — a 92-pt ring with a 10-pt stroke:
   - Color shifts **green → orange → red** at 60 % / 85 %
   - A small **end-cap dot** rides the trim end (`.rotationEffect` driven by the same fraction)
@@ -90,7 +90,7 @@ brew install --cask membar
 
 1. Launch MemBar — the donut gauge appears in the menu bar (top-right).
 2. **Click** the donut to open the popover.
-3. In the popover, use the **picker** to switch between 内存占用 and 网速.
+3. In the popover, use the **picker** to switch between 内存使用 and 网速.
 4. The picker choice is remembered between launches.
 5. **Right-click** the donut for a "Quit MemBar" menu.
 

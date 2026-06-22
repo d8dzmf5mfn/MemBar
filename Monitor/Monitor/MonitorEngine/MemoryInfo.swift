@@ -19,44 +19,30 @@ nonisolated func collectMemoryInfo() -> MemorySnapshot {
     let total = ProcessInfo.processInfo.physicalMemory
 
     let freeBytes = UInt64(vmStat.free_count) * pageSize
-    let activeBytes = UInt64(vmStat.active_count) * pageSize
     let inactiveBytes = UInt64(vmStat.inactive_count) * pageSize
     let wiredBytes = UInt64(vmStat.wire_count) * pageSize
     let compressedBytes = UInt64(vmStat.compressor_page_count) * pageSize
     let purgeableBytes = UInt64(vmStat.purgeable_count) * pageSize
     let speculativeBytes = UInt64(vmStat.speculative_count) * pageSize
 
-    let usedBytes: UInt64
-    if total > freeBytes + inactiveBytes + purgeableBytes + speculativeBytes {
-        usedBytes = total - (freeBytes + inactiveBytes + purgeableBytes + speculativeBytes)
-    } else {
-        usedBytes = total - freeBytes
-    }
-
-    let appMemoryBytes: UInt64
-    if activeBytes + speculativeBytes > 0 {
-        let fileBackedEstimate = UInt64(Double(activeBytes) * 0.3)
-        if activeBytes + speculativeBytes > fileBackedEstimate {
-            appMemoryBytes = activeBytes + speculativeBytes - fileBackedEstimate
-        } else {
-            appMemoryBytes = activeBytes
-        }
-    } else {
-        appMemoryBytes = 0
-    }
-
-    let usagePercent = total > 0 ? Double(usedBytes) / Double(total) * 100.0 : 0
+    let memoryUsage = calculateMemoryUsage(
+        totalBytes: total,
+        freeBytes: freeBytes,
+        inactiveBytes: inactiveBytes,
+        purgeableBytes: purgeableBytes,
+        speculativeBytes: speculativeBytes
+    )
 
     return MemorySnapshot(
         totalBytes: total,
-        usedBytes: usedBytes,
+        usedBytes: memoryUsage.usedBytes,
         freeBytes: freeBytes,
         wiredBytes: wiredBytes,
         compressedBytes: compressedBytes,
         purgeableBytes: purgeableBytes,
         speculativeBytes: speculativeBytes,
-        appMemoryBytes: appMemoryBytes,
-        usagePercent: usagePercent,
+        appMemoryBytes: 0,
+        usagePercent: memoryUsage.usagePercent,
         timestamp: Date()
     )
 }

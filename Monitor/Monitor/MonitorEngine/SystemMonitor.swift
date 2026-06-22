@@ -41,7 +41,7 @@ final class SystemMonitor {
 
         var label: String {
             switch self {
-            case .memory: "内存占用"
+            case .memory: "内存使用"
             case .network: "网速"
             }
         }

@@ -95,7 +95,7 @@ struct MenuBarView: View {
 
     private var modePicker: some View {
         Picker("显示", selection: Bindable(monitor).menuBarMode) {
-            Text("内存占用").tag(SystemMonitor.MenuBarMode.memory)
+            Text("内存使用").tag(SystemMonitor.MenuBarMode.memory)
             Text("网速").tag(SystemMonitor.MenuBarMode.network)
         }
         .pickerStyle(.segmented)

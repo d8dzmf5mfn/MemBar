@@ -8,8 +8,8 @@ import Foundation
 struct NetworkSample {
     var downloadSpeed: Double      // bytes per second
     var uploadSpeed: Double        // bytes per second
-    var downloadTotalBytes: UInt64 // cumulative, for the next delta
-    var uploadTotalBytes: UInt64   // cumulative, for the next delta
+    var receivedBytesByInterface: [String: UInt64]
+    var sentBytesByInterface: [String: UInt64]
     var timestamp: Date
 }
 
@@ -22,13 +22,12 @@ nonisolated func collectNetworkInfo(previous: NetworkSample?) -> NetworkSample {
     guard getifaddrs(&ifaddrPtr) == 0, let firstAddr = ifaddrPtr else {
         return NetworkSample(
             downloadSpeed: 0, uploadSpeed: 0,
-            downloadTotalBytes: 0, uploadTotalBytes: 0,
+            receivedBytesByInterface: [:], sentBytesByInterface: [:],
             timestamp: Date()
         )
     }
 
-    var totalRx: UInt64 = 0
-    var totalTx: UInt64 = 0
+    var counters: [InterfaceCounter] = []
 
     var ptr = firstAddr
     while true {
@@ -41,8 +40,11 @@ nonisolated func collectNetworkInfo(previous: NetworkSample?) -> NetworkSample {
         if addr.ifa_addr.pointee.sa_family == AF_LINK,
            name.hasPrefix("en") || name.hasPrefix("ap") {
             if let data = addr.ifa_data?.assumingMemoryBound(to: if_data.self).pointee {
-                totalRx += UInt64(data.ifi_ibytes)
-                totalTx += UInt64(data.ifi_obytes)
+                counters.append(InterfaceCounter(
+                    name: name,
+                    receivedBytes: UInt64(data.ifi_ibytes),
+                    sentBytes: UInt64(data.ifi_obytes)
+                ))
             }
         }
 
@@ -53,30 +55,20 @@ nonisolated func collectNetworkInfo(previous: NetworkSample?) -> NetworkSample {
     freeifaddrs(ifaddrPtr)
 
     let now = Date()
-    let downloadSpeed: Double
-    let uploadSpeed: Double
-
-    if let prev = previous {
-        let interval = now.timeIntervalSince(prev.timestamp)
-        if interval > 0 {
-            // `&-` is wrapping subtraction so a counter reset (e.g. interface
-            // bounce) can't trap us on a negative UInt64.
-            downloadSpeed = Double(totalRx &- prev.downloadTotalBytes) / interval
-            uploadSpeed   = Double(totalTx &- prev.uploadTotalBytes) / interval
-        } else {
-            downloadSpeed = 0
-            uploadSpeed = 0
-        }
-    } else {
-        downloadSpeed = 0
-        uploadSpeed = 0
+    let baseline = previous.map {
+        NetworkSnapshotBaseline(
+            timestamp: $0.timestamp,
+            receivedBytesByInterface: $0.receivedBytesByInterface,
+            sentBytesByInterface: $0.sentBytesByInterface
+        )
     }
+    let result = calculateNetworkRates(previous: baseline, current: counters, now: now)
 
     return NetworkSample(
-        downloadSpeed: max(downloadSpeed, 0),
-        uploadSpeed: max(uploadSpeed, 0),
-        downloadTotalBytes: totalRx,
-        uploadTotalBytes: totalTx,
+        downloadSpeed: result.downloadSpeed,
+        uploadSpeed: result.uploadSpeed,
+        receivedBytesByInterface: result.baseline.receivedBytesByInterface,
+        sentBytesByInterface: result.baseline.sentBytesByInterface,
         timestamp: now
     )
 }
