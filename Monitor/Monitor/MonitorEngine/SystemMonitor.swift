@@ -25,6 +25,7 @@ final class SystemMonitor {
     private var timer: Timer?
     private var previousCPUTicks: [CPUResult]?
     private var previousNetworkSample: NetworkSample?
+    private var cachedBatteryTemperature: Double?
 
     private var rawDownloadHistory: [Double] = []
     private var rawUploadHistory: [Double] = []
@@ -72,6 +73,15 @@ final class SystemMonitor {
     // MARK: - Tunables
     let maxHistoryCount = 60
     let refreshInterval: TimeInterval = 2.0
+    private let temperatureRefreshController: TemperatureRefreshController
+
+    init(temperatureProvider: BatteryTemperatureProviding = IOKitBatteryTemperatureProvider()) {
+        self.temperatureRefreshController = TemperatureRefreshController(
+            minimumInterval: 15,
+            currentTime: { Date().timeIntervalSince1970 },
+            fetchTemperature: { temperatureProvider.batteryTemperatureCelsius() }
+        )
+    }
 
     // MARK: - Lifecycle
     func start() {
@@ -115,20 +125,14 @@ final class SystemMonitor {
             timestamp: Date()
         )
 
-        // 4. Thermal — update immediately from the enum (cheap), then
-        //    refresh the optional battery temp in a background task.
-        thermal = ThermalSnapshot(state: ProcessInfo.processInfo.thermalState, batteryTempCelsius: nil, timestamp: Date())
-        let capturedSelf = self
-        Task.detached(priority: .background) {
-            let batteryTemp = collectBatteryTemperatureFromIOReg()
-            await MainActor.run {
-                capturedSelf.thermal = ThermalSnapshot(
-                    state: ProcessInfo.processInfo.thermalState,
-                    batteryTempCelsius: batteryTemp,
-                    timestamp: Date()
-                )
-            }
+        if let batteryTemperature = temperatureRefreshController.refreshIfNeeded() {
+            cachedBatteryTemperature = batteryTemperature
         }
+        thermal = ThermalSnapshot(
+            state: ProcessInfo.processInfo.thermalState,
+            batteryTempCelsius: cachedBatteryTemperature,
+            timestamp: Date()
+        )
 
         // 5. History buffers (raw + smoothed, in KB/s — the menu bar
         //    format and popover bar chart both consume KB/s).

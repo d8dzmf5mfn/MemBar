@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var renderer: MenuBarRenderer!
     private var iconView: StatusBarIconView!
     private var popover: NSPopover!
+    private var refreshObserver: NSObjectProtocol?
     /// Held strongly so the KVO token isn't deallocated mid-observation.
     /// Without this, `observe(...)` returns a token that the Swift runtime
     /// would deallocate at the end of the calling expression, killing
@@ -88,6 +89,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.iconView.needsDisplay = true
         }
         statusItem.button?.setAccessibilityLabel("MemBar system monitor")
+        refreshObserver = NotificationCenter.default.addObserver(
+            forName: .systemMonitorDidRefresh,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.renderer?.renderIfNeeded()
+        }
 
         // Re-render the menu-bar icon when the system appearance changes
         // (light ⇄ dark, or high-contrast variants). The NSImage is
@@ -102,9 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // and `NSSystemColorsDidChange`, but the former is not exposed
         // to Swift and the latter fires too aggressively.)
         themeObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .initial]) { [weak self] _, _ in
-            // KVO callbacks land on the thread that mutated the value,
-            // which is the main thread for `NSApp.effectiveAppearance`.
-            MainActor.assumeIsolated { self?.renderer?.render() }
+            self?.renderer?.renderIfNeeded(force: true)
         }
     }
 
@@ -137,6 +143,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
 
     func applicationWillTerminate(_ notification: Notification) {
+        if let refreshObserver {
+            NotificationCenter.default.removeObserver(refreshObserver)
+        }
         renderer?.stop()
         monitor?.stop()
     }
@@ -188,7 +197,7 @@ final class StatusBarIconView: NSView {
 final class MenuBarRenderer {
     private let monitor: SystemMonitor
     private let onImage: (NSImage, NSSize) -> Void
-    private var timer: Timer?
+    private var lastRenderState: RenderState?
 
     // Visual constants — measured in POINTS (1pt = 1px @ 1x, 2px @ 2x retina).
     // The renderer rasterizes at 2x for crispness on retina, but layout is
@@ -209,18 +218,9 @@ final class MenuBarRenderer {
         start()
     }
 
-    func start() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            // Timer fires on the main run loop, so we're already on
-            // the main actor — `assumeIsolated` lets us call the
-            // @MainActor-isolated `render()` synchronously.
-            MainActor.assumeIsolated { self?.render() }
-        }
-        render()
-    }
+    func start() { renderIfNeeded(force: true) }
 
-    func stop() { timer?.invalidate(); timer = nil }
+    func stop() {}
 
     /// Public so AppDelegate can size the initial view before the first frame.
     static func preferredSize(
@@ -279,7 +279,28 @@ final class MenuBarRenderer {
 
     // MARK: - Render
 
-    func render() {
+    private struct RenderState: Equatable {
+        let mode: SystemMonitor.MenuBarMode
+        let memoryPercent: Int
+        let downloadBps: Int
+        let uploadBps: Int
+        let isDarkMode: Bool
+    }
+
+    func renderIfNeeded(force: Bool = false) {
+        let nextState = RenderState(
+            mode: monitor.menuBarMode,
+            memoryPercent: Int(monitor.memory.usagePercent.rounded()),
+            downloadBps: Int(monitor.displayDownloadSpeed.rounded()),
+            uploadBps: Int(monitor.displayUploadSpeed.rounded()),
+            isDarkMode: NSApp.effectiveAppearance.bestMatch(from: [.darkAqua]) != nil
+        )
+        guard force || nextState != lastRenderState else { return }
+        lastRenderState = nextState
+        render()
+    }
+
+    private func render() {
         let memPct = monitor.memory.usagePercent
         let down = monitor.displayDownloadSpeed
         let up = monitor.displayUploadSpeed

@@ -500,9 +500,7 @@ struct MenuBarView: View {
 // Rightmost (most recent) bar of the network chart. Instead of a
 // frozen bar that only jumps at each 2 s sample, this view interpolates
 // from the previous value to the new value using an ease-out quadratic
-// curve, so the bar smoothly "fills" between refreshes. A subtle
-// breathing wave (3% amplitude, ~0.88 Hz) keeps the chart feeling alive
-// even when traffic is steady.
+// curve, so the bar smoothly "fills" between refreshes.
 // =====================================================
 private struct LiveBar: View {
     let value: Double
@@ -523,10 +521,7 @@ private struct LiveBar: View {
             let effectiveValue = previousValue + (value - previousValue) * easedProgress
 
             let ratio = maxValue > 0 ? CGFloat(effectiveValue / maxValue) : 0
-            // Subtle breathing wave on top of the interpolation —
-            // 3 % amplitude keeps it organic without fighting the grow.
-            let breathe: CGFloat = effectiveValue > 0 ? 1.0 + 0.03 * sin(elapsed * 5.5) : 1.0
-            let barHeight = max(effectiveValue > 0 ? 2 : 0, usableHeight * ratio * breathe)
+            let barHeight = max(effectiveValue > 0 ? 2 : 0, usableHeight * ratio)
             let barColor: Color = effectiveValue > 0 ? tint : tint.opacity(0.22)
 
             RoundedRectangle(cornerRadius: 1.8, style: .continuous)

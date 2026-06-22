@@ -1,37 +1,55 @@
 import Foundation
+import IOKit
 
-/// Read battery temperature from IORegistry.
-/// On Apple Silicon Macs, the battery gas gauge exposes "Temperature" in 0.1 Kelvin units.
-/// Returns °C or nil if unavailable.
-nonisolated func collectBatteryTemperatureFromIOReg() -> Double? {
-    let task = Process()
-    task.launchPath = "/usr/sbin/ioreg"
-    // Use -l (short output format, not -w0 which doesn't trunc) with grep to find "Temperature"
-    task.arguments = ["-l"]
+protocol BatteryTemperatureProviding {
+    func batteryTemperatureCelsius() -> Double?
+}
 
-    let pipe = Pipe()
-    task.standardOutput = pipe
+struct IOKitBatteryTemperatureProvider: BatteryTemperatureProviding {
+    func batteryTemperatureCelsius() -> Double? {
+        guard let matching = IOServiceMatching("AppleSmartBattery") else { return nil }
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, matching)
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
 
-    do {
-        try task.run()
-        task.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else { return nil }
-
-        // Parse "Temperature" = <value> (battery temp in 0.1 Kelvin)
-        let pattern = try NSRegularExpression(pattern: "\"Temperature\"\\s*=\\s*(\\d+)")
-        let range = NSRange(output.startIndex..., in: output)
-        if let match = pattern.firstMatch(in: output, range: range) {
-            let valueRange = Range(match.range(at: 1), in: output)!
-            let value = UInt64(output[valueRange]) ?? 0
-            guard value > 0 else { return nil }
-            // Temperature is in 0.1 Kelvin units
-            let celsius = Double(value) / 10.0 - 273.15
-            return celsius
+        guard let rawValue = IORegistryEntryCreateCFProperty(
+            service,
+            "Temperature" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() as? NSNumber else {
+            return nil
         }
-        return nil
-    } catch {
-        return nil
+
+        let value = rawValue.doubleValue
+        guard value > 0 else { return nil }
+        return value / 10.0 - 273.15
+    }
+}
+
+final class TemperatureRefreshController {
+    private let minimumInterval: TimeInterval
+    private let currentTime: () -> TimeInterval
+    private let fetchTemperature: () -> Double?
+    private var lastRefreshTime: TimeInterval?
+
+    init(
+        minimumInterval: TimeInterval,
+        currentTime: @escaping () -> TimeInterval,
+        fetchTemperature: @escaping () -> Double?
+    ) {
+        self.minimumInterval = minimumInterval
+        self.currentTime = currentTime
+        self.fetchTemperature = fetchTemperature
+    }
+
+    func refreshIfNeeded() -> Double? {
+        let now = currentTime()
+        if let lastRefreshTime, now - lastRefreshTime < minimumInterval {
+            return nil
+        }
+
+        lastRefreshTime = now
+        return fetchTemperature()
     }
 }
