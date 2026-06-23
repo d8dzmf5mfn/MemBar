@@ -40,7 +40,7 @@ struct MenuBarView: View {
     private let barCount: Int = 16      // how many bars in the network chart
     private let barSpacing: CGFloat = 1.5
     private let barChartHeight: CGFloat = 40
-    private let popoverWidth: CGFloat = 280
+    private let popoverWidth: CGFloat = 292
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,14 +51,17 @@ struct MenuBarView: View {
 
             chartSection
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 10)
-
-            Divider()
-                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(panelBackground)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 8)
 
             dataRows
-                .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+                .padding(.horizontal, 10)
+                .background(panelBackground)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 8)
 
             footer
         }
@@ -83,6 +86,15 @@ struct MenuBarView: View {
             isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua]) != nil
         }
         .animation(.smooth(duration: 0.32), value: monitor.menuBarMode)
+    }
+
+    private var panelBackground: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color.primary.opacity(isDarkMode ? 0.07 : 0.045))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.primary.opacity(isDarkMode ? 0.08 : 0.055), lineWidth: 1)
+            )
     }
 
     // MARK: - Picker
@@ -171,7 +183,7 @@ struct MenuBarView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 10)
     }
 
     /// A small filled circle that sits at the leading edge of the
@@ -218,7 +230,7 @@ struct MenuBarView: View {
                 samples: uploadSamples
             )
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 10)
     }
 
     @ViewBuilder
@@ -376,8 +388,8 @@ struct MenuBarView: View {
     ) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(accent)
                 .frame(width: 14, alignment: .center)
             Text(label)
                 .font(.system(size: 11))
@@ -404,8 +416,8 @@ struct MenuBarView: View {
     private var temperatureRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "thermometer.medium")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(monitor.thermal.state == .nominal ? .green : .orange)
                 .frame(width: 14, alignment: .center)
             Text("温度")
                 .font(.system(size: 11))
@@ -433,10 +445,10 @@ struct MenuBarView: View {
                 Button("退出") {
                     NSApplication.shared.terminate(nil)
                 }
-                .font(.system(size: 11, weight: .regular))
+                .font(.system(size: 11, weight: .medium))
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .padding(.vertical, 6)
+                .padding(.vertical, 7)
                 .padding(.horizontal, 12)
                 .contentShape(Rectangle())
                 Spacer(minLength: 0)
