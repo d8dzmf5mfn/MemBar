@@ -210,7 +210,7 @@ final class MenuBarRenderer {
     private static let gap: CGFloat = 5            // gap between donut and label
     private static let fontSize: CGFloat = 11      // ~NSFont.smallSystemFontSize
     static let donutArcStartAngle: CGFloat = .pi / 2
-    static let donutArcClockwise = false
+    static let donutArcClockwise = true
 
     init(monitor: SystemMonitor, onImage: @escaping (NSImage, NSSize) -> Void) {
         self.monitor = monitor
@@ -280,7 +280,7 @@ final class MenuBarRenderer {
     static func donutArcEndAngle(for fillRatio: Double) -> CGFloat {
         let clampedRatio = max(0, min(1, fillRatio))
         let sweep: CGFloat = .pi * 2 * CGFloat(clampedRatio)
-        return donutArcStartAngle + sweep
+        return donutArcStartAngle - sweep
     }
 
     // MARK: - Render
@@ -350,8 +350,8 @@ final class MenuBarRenderer {
         )
 
         // ---- 2. Foreground arc (filled portion) ----
-        // The arc grows clockwise on screen from 12 o'clock. At 0% nothing
-        // is drawn — the icon is "empty" so the user knows memory is idle.
+        // Match the expanded SwiftUI donut's trim direction from 12 o'clock.
+        // At 0% nothing is drawn, so memory idle reads as an empty gauge.
         // We deliberately do NOT draw a faint background ring, because:
         //   1) macOS template-mode NSImage treats the alpha mask with a
         //      threshold — a low-alpha ring (e.g. 0.22) renders as fully
@@ -360,11 +360,11 @@ final class MenuBarRenderer {
         //      and visually conflict with the foreground arc, killing the
         //      "growing" effect that makes the gauge readable.
         // CG `addArc` semantics (Y-flipped context):
-        //   - clockwise: false + end > start   → short arc, growing CCW in
-        //     CG math = visually CW on screen after the Y flip
-        //   - For sweep > 180° we still use end = start + sweep; CG will
+        //   - clockwise: true + end < start    → same visual direction as
+        //     SwiftUI Circle().trim(...).rotationEffect(-90).
+        //   - For sweep > 180° we still use end = start - sweep; CG will
         //     take the long way around (wrapping past 2π) and the arc
-        //     still grows CW on screen.
+        //     still tracks the expanded donut.
         //   - For sweep == 2π (i.e. 100%) the arc closes back to start.
         let fillRatio = max(0, min(1, memPct / 100.0))
         if fillRatio > 0 {

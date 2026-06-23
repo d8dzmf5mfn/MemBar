@@ -9,11 +9,11 @@ final class StatusBarIconViewTests: XCTestCase {
         XCTAssertFalse(view.isFlipped)
     }
 
-    func test_menuBarRendererDrawsMemoryArcClockwiseFromTwelveOClock() {
-        XCTAssertFalse(MenuBarRenderer.donutArcClockwise)
+    func test_menuBarRendererMatchesExpandedDonutDirection() {
+        XCTAssertTrue(MenuBarRenderer.donutArcClockwise)
         XCTAssertEqual(
             MenuBarRenderer.donutArcEndAngle(for: 0.25),
-            .pi,
+            0,
             accuracy: 0.0001
         )
     }
