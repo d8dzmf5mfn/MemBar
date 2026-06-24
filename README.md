@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Release](https://img.shields.io/badge/download-latest-brightgreen)](https://github.com/d8dzmf5mfn/MemBar/releases/latest)
 
-**A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory usage rises. Click it for a popover with a big ring chart, live network throughput, CPU, and battery temperature.
+**A lightweight macOS menu bar system monitor.** A donut gauge in the menu bar fills as memory usage rises. Click it for a popover with a large ring chart, live network throughput, CPU, and battery temperature.
 
 轻量级 macOS 菜单栏系统监控工具。菜单栏小圆环随内存使用填充,点开是带大圆环、实时网速、CPU 和电池温度的弹窗。
 
@@ -28,9 +28,10 @@
   - *network* — `↓1.2MB ↑234KB` download/upload text
 - Mode is picked from the popover and persisted to `UserDefaults`.
 - Re-renders on appearance change (light ⇄ dark, Auto Dark Mode).
+- The current menu-bar arc is vertically flipped relative to the earlier builds, so the fill starts from the lower half of the ring.
 
 ### 🖱️ Popover / 弹窗
-Click the menu bar icon to open a 280 × 280 SwiftUI popover:
+Click the menu bar icon to open a 292-pt wide SwiftUI popover:
 - **Mode picker** — segmented control at the top: 内存使用 / 网速.
 - **Memory mode** — a 92-pt ring with a 10-pt stroke:
   - Color shifts **green → orange → red** at 60 % / 85 %
@@ -39,6 +40,7 @@ Click the menu bar icon to open a 280 × 280 SwiftUI popover:
   - A subtle **shadow halo** appears above 85 %
   - Used / total bytes and a `稳定 / 偏高 / 告急` status caption round out the row
   - The whole ring is GPU-rendered via `.drawingGroup()` for retina crispness
+  - The chart and metrics areas use a light grouped panel treatment for quicker scanning
 - **Network mode** — two stacked rolling-window bar charts (download in blue, upload in green):
   - 16 bars per chart, 2 s per sample, history ≈ 32 s
   - Each bar's height is normalized to the window's max, so spikes always fill the chart
@@ -54,10 +56,10 @@ Click the menu bar icon to open a 280 × 280 SwiftUI popover:
   - `vm_statistics64` for memory
   - `getifaddrs` for network throughput (delta between samples)
   - `IORegistry` for battery temperature
-- All charts animate via value-driven `.animation(.spring, value:)` or `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
-- The memory donut uses `.spring(response: 0.6, dampingFraction: 0.75)` for smooth transitions.
+- All charts animate via value-driven `.animation(.smooth, value:)` or `.animation(.easeInOut, value:)` modifiers — the popover root does **not** use `.id(refreshCounter)`, so in-flight transitions are never torn down by a forced rebuild.
+- The memory donut uses `.smooth(duration: 0.5)` for its main transition.
 - The latest network bar (`LiveBar`) interpolates from the previous sample to the current one over 2 seconds with an ease-out quadratic curve, so the chart flows smoothly between refresh ticks.
-- All bar heights use `.spring(response: 0.55, dampingFraction: 0.8)` for a bouncy, natural transition.
+- Historical bar heights use `.smooth(duration: 0.45)` and the latest bar is timeline-driven.
 - ~1,440 lines of Swift.
 
 ---

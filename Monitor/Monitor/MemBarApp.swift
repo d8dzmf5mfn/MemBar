@@ -202,14 +202,14 @@ final class MenuBarRenderer {
     // always in points.
     //
     // Donut chart: outer ring renders as a low-alpha stroke; the filled
-    // portion is an arc that grows clockwise from 12 o'clock as memory
+    // portion is an arc that grows from 6 o'clock as memory
     // usage rises. The 22pt menu bar height is the binding constraint —
     // donut diameter is set to fit comfortably inside.
     private static let donutDiameter: CGFloat = 16
     private static let strokeWidth: CGFloat = 2.5
     private static let gap: CGFloat = 5            // gap between donut and label
     private static let fontSize: CGFloat = 11      // ~NSFont.smallSystemFontSize
-    static let donutArcStartAngle: CGFloat = .pi / 2
+    static let donutArcStartAngle: CGFloat = -.pi / 2
     static let donutArcClockwise = true
 
     init(monitor: SystemMonitor, onImage: @escaping (NSImage, NSSize) -> Void) {
@@ -350,7 +350,8 @@ final class MenuBarRenderer {
         )
 
         // ---- 2. Foreground arc (filled portion) ----
-        // Match the expanded SwiftUI donut's trim direction from 12 o'clock.
+        // The menu-bar gauge is the vertically flipped version of the
+        // previous arc, so its start point sits at 6 o'clock.
         // At 0% nothing is drawn, so memory idle reads as an empty gauge.
         // We deliberately do NOT draw a faint background ring, because:
         //   1) macOS template-mode NSImage treats the alpha mask with a
