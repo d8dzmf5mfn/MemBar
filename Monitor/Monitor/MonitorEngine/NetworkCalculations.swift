@@ -4,6 +4,22 @@ struct InterfaceCounter {
     let name: String
     let receivedBytes: UInt64
     let sentBytes: UInt64
+    let isUp: Bool
+    let isLoopback: Bool
+
+    nonisolated init(
+        name: String,
+        receivedBytes: UInt64,
+        sentBytes: UInt64,
+        isUp: Bool = true,
+        isLoopback: Bool = false
+    ) {
+        self.name = name
+        self.receivedBytes = receivedBytes
+        self.sentBytes = sentBytes
+        self.isUp = isUp
+        self.isLoopback = isLoopback
+    }
 }
 
 struct NetworkSnapshotBaseline {
@@ -23,7 +39,7 @@ nonisolated func calculateNetworkRates(
     current: [InterfaceCounter],
     now: Date
 ) -> NetworkRateResult {
-    let filtered = current.filter { $0.name.hasPrefix("en") || $0.name.hasPrefix("ap") }
+    let filtered = current.filter { $0.isUp && !$0.isLoopback }
     let baseline = NetworkSnapshotBaseline(
         timestamp: now,
         receivedBytesByInterface: Dictionary(uniqueKeysWithValues: filtered.map { ($0.name, $0.receivedBytes) }),

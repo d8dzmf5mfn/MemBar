@@ -70,6 +70,10 @@ Click the menu bar icon to open a 292-pt wide SwiftUI popover:
 
 [**Download MemBar.dmg**](https://github.com/d8dzmf5mfn/MemBar/releases/latest) from the Releases page.
 
+Latest release: **v1.0.2**. This release cleans up an invalid bundled font
+resource, hardens CPU and network counter handling, and keeps command-line
+tests on `/private/tmp` DerivedData to avoid local codesign failures.
+
 Or via Homebrew (planned):
 ```bash
 brew install --cask membar
@@ -116,6 +120,15 @@ cd MemBar/Monitor
 DEVELOPER_DIR="$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
   xcodebuild -project Monitor.xcodeproj -scheme Monitor -configuration Release build
 # Built .app will be in DerivedData
+```
+
+Run tests with DerivedData outside the workspace to avoid file-provider
+extended attributes interfering with local codesigning:
+```bash
+DEVELOPER_DIR="$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
+  xcodebuild test -project Monitor/Monitor.xcodeproj -scheme Monitor \
+  -destination 'platform=macOS' \
+  -derivedDataPath /private/tmp/membar-derived-data
 ```
 
 ### Building a DMG locally

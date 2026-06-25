@@ -13,7 +13,7 @@ struct MemBarApp: App {
     }
 
     private func registerFonts() {
-        for name in ["RockSalt-Regular", "Caveat-Regular"] {
+        for name in ["RockSalt-Regular"] {
             guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }

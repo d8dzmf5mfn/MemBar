@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 /// Raw network measurement result. We need the cumulative byte counters
@@ -34,16 +35,15 @@ nonisolated func collectNetworkInfo(previous: NetworkSample?) -> NetworkSample {
         let addr = ptr.pointee
         let name = String(cString: addr.ifa_name)
 
-        // Only count physical interfaces (en* = ethernet/wifi, ap* = awdl).
-        // Loops / tunnels / bridges are excluded so the gauge reflects
-        // real internet activity, not loopback chatter.
-        if addr.ifa_addr.pointee.sa_family == AF_LINK,
-           name.hasPrefix("en") || name.hasPrefix("ap") {
+        if addr.ifa_addr.pointee.sa_family == AF_LINK {
             if let data = addr.ifa_data?.assumingMemoryBound(to: if_data.self).pointee {
+                let flags = addr.ifa_flags
                 counters.append(InterfaceCounter(
                     name: name,
                     receivedBytes: UInt64(data.ifi_ibytes),
-                    sentBytes: UInt64(data.ifi_obytes)
+                    sentBytes: UInt64(data.ifi_obytes),
+                    isUp: flags & UInt32(IFF_UP) != 0,
+                    isLoopback: flags & UInt32(IFF_LOOPBACK) != 0
                 ))
             }
         }

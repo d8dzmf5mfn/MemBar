@@ -22,12 +22,12 @@ nonisolated func calculateCPUUsage(previous: [CPUResult]?, current: [CPUResult])
 
     for (index, currentTicks) in current.enumerated() {
         let previousTicks = previous.indices.contains(index) ? previous[index] : CPUResult()
-        let deltaUser = currentTicks.user &- previousTicks.user
-        let deltaSystem = currentTicks.system &- previousTicks.system
-        let deltaIdle = currentTicks.idle &- previousTicks.idle
-        let deltaNice = currentTicks.nice &- previousTicks.nice
-        let deltaTotal = deltaUser &+ deltaSystem &+ deltaIdle &+ deltaNice
-        let deltaUsed = deltaUser &+ deltaSystem &+ deltaNice
+        let deltaUser = tickDelta(currentTicks.user, previousTicks.user)
+        let deltaSystem = tickDelta(currentTicks.system, previousTicks.system)
+        let deltaIdle = tickDelta(currentTicks.idle, previousTicks.idle)
+        let deltaNice = tickDelta(currentTicks.nice, previousTicks.nice)
+        let deltaTotal = deltaUser + deltaSystem + deltaIdle + deltaNice
+        let deltaUsed = deltaUser + deltaSystem + deltaNice
 
         if deltaTotal == 0 {
             perCoreUsage.append(0)
@@ -35,8 +35,8 @@ nonisolated func calculateCPUUsage(previous: [CPUResult]?, current: [CPUResult])
         }
 
         perCoreUsage.append(Double(deltaUsed) / Double(deltaTotal) * 100)
-        totalUsed &+= deltaUsed
-        totalTicks &+= deltaTotal
+        totalUsed += deltaUsed
+        totalTicks += deltaTotal
     }
 
     let usagePercent = totalTicks == 0 ? 0 : Double(totalUsed) / Double(totalTicks) * 100
@@ -55,13 +55,13 @@ nonisolated func calculateCPUStatePercents(previous: [CPUResult]?, current: [CPU
 
     for (index, currentTicks) in current.enumerated() {
         let previousTicks = previous.indices.contains(index) ? previous[index] : CPUResult()
-        totalUser &+= currentTicks.user &- previousTicks.user
-        totalSystem &+= currentTicks.system &- previousTicks.system
-        totalIdle &+= currentTicks.idle &- previousTicks.idle
-        totalNice &+= currentTicks.nice &- previousTicks.nice
+        totalUser += tickDelta(currentTicks.user, previousTicks.user)
+        totalSystem += tickDelta(currentTicks.system, previousTicks.system)
+        totalIdle += tickDelta(currentTicks.idle, previousTicks.idle)
+        totalNice += tickDelta(currentTicks.nice, previousTicks.nice)
     }
 
-    let totalTicks = totalUser &+ totalSystem &+ totalIdle &+ totalNice
+    let totalTicks = totalUser + totalSystem + totalIdle + totalNice
     guard totalTicks > 0 else {
         return CPUStatePercents(userPercent: 0, systemPercent: 0, idlePercent: 0)
     }
@@ -71,4 +71,8 @@ nonisolated func calculateCPUStatePercents(previous: [CPUResult]?, current: [CPU
         systemPercent: Double(totalSystem) / Double(totalTicks) * 100,
         idlePercent: Double(totalIdle) / Double(totalTicks) * 100
     )
+}
+
+private nonisolated func tickDelta(_ current: UInt64, _ previous: UInt64) -> UInt64 {
+    current >= previous ? current - previous : 0
 }
