@@ -27,7 +27,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 XCODEPROJ="$REPO_ROOT/Monitor/Monitor.xcodeproj"
 SCHEME="Monitor"
 CONFIG="Release"
-BUILD_DIR="$REPO_ROOT/Monitor/build/Build/Products/$CONFIG"
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/private/tmp/membar-dmg-derived-data}"
+BUILD_DIR="$DERIVED_DATA_PATH/Build/Products/$CONFIG"
 APP_PATH="$BUILD_DIR/MemBar.app"
 STAGE_DIR="$(mktemp -d -t membar-dmg)"
 DMG_TMP="$(mktemp -d -t membar-dmg)"
@@ -50,7 +51,7 @@ if [[ $SKIP_BUILD -eq 0 ]]; then
         -scheme "$SCHEME" \
         -configuration "$CONFIG" \
         -destination 'platform=macOS' \
-        -derivedDataPath build \
+        -derivedDataPath "$DERIVED_DATA_PATH" \
         CODE_SIGNING_ALLOWED=NO \
         clean build 2>&1 | tail -20
 else

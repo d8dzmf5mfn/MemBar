@@ -140,7 +140,7 @@ DEVELOPER_DIR="$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
 
 The build script:
 1. Runs `xcodebuild` in Release configuration
-2. Locates the built `MemBar.app` in DerivedData
+2. Writes DerivedData to `/private/tmp/membar-dmg-derived-data` by default, keeping build artifacts out of the repository
 3. Clears extended attributes, ad-hoc signs the local app bundle, and creates a `MemBar.dmg` using `hdiutil`
 
 Local DMG builds are ad-hoc signed only.
