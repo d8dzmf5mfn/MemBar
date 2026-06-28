@@ -70,9 +70,9 @@ Click the menu bar icon to open a 292-pt wide SwiftUI popover:
 
 [**Download MemBar.dmg**](https://github.com/d8dzmf5mfn/MemBar/releases/latest) from the Releases page.
 
-Latest release: **v1.1.0**. This release adds a real Settings window,
-introduces a provider-based metrics engine, and improves local release
-diagnostics while preserving the lightweight menu-bar experience.
+Latest release: **v1.1.1**. This release makes Settings discoverable from the
+popover and right-click menu, adds a provider-based metrics engine, and improves
+local release diagnostics while preserving the lightweight menu-bar experience.
 
 Or via Homebrew (planned):
 ```bash
@@ -98,7 +98,8 @@ brew install --cask membar
 2. **Click** the donut to open the popover.
 3. In the popover, use the **picker** to switch between 内存使用 and 网速.
 4. The picker choice is remembered between launches.
-5. **Right-click** the donut for a "Quit MemBar" menu.
+5. Use **设置** in the popover, or right-click the donut and choose **Settings**, to open preferences.
+6. **Right-click** the donut for a "Quit MemBar" menu.
 
 The gauge auto-tints with your system's light / dark appearance. Enable macOS **Auto Dark Mode** (System Settings → Appearance → Auto) to make it follow the time of day automatically.
 

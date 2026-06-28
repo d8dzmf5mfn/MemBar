@@ -441,8 +441,20 @@ struct MenuBarView: View {
     private var footer: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack {
+            HStack(spacing: 0) {
+                Button("设置") {
+                    NSApp.sendAction(AppDelegate.showSettingsSelector, to: nil, from: nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                .font(.system(size: 11, weight: .medium))
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 7)
+                .padding(.horizontal, 12)
+                .contentShape(Rectangle())
+
                 Spacer(minLength: 0)
+
                 Button("退出") {
                     NSApplication.shared.terminate(nil)
                 }
@@ -452,7 +464,6 @@ struct MenuBarView: View {
                 .padding(.vertical, 7)
                 .padding(.horizontal, 12)
                 .contentShape(Rectangle())
-                Spacer(minLength: 0)
             }
         }
     }

@@ -31,6 +31,9 @@ struct MemBarApp: App {
 // =====================================================
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    static let settingsMenuTitle = "Settings"
+    static let showSettingsSelector = Selector(("showSettingsWindow:"))
+
     private var statusItem: NSStatusItem!
     private var monitor: SystemMonitor!
     private var renderer: MenuBarRenderer!
@@ -127,6 +130,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Right-click → quit menu.
         if event?.type == .rightMouseDown {
             let menu = NSMenu()
+            menu.addItem(withTitle: Self.settingsMenuTitle, action: #selector(openSettings), keyEquivalent: ",")
+            menu.addItem(.separator())
             menu.addItem(withTitle: "Quit MemBar", action: #selector(quit), keyEquivalent: "q")
             statusItem.menu = menu
             statusItem.button?.performClick(nil)
@@ -148,6 +153,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func quit() { NSApp.terminate(nil) }
+
+    @objc private func openSettings() {
+        NSApp.sendAction(Self.showSettingsSelector, to: nil, from: nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
 
     func applicationWillTerminate(_ notification: Notification) {
         if let refreshObserver {

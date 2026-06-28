@@ -107,7 +107,7 @@ if [[ -f "$DMG_OUTPUT" ]]; then
     echo "Note: GitHub release builds still need Developer ID signing and notarization."
     echo ""
     echo "Next: create a GitHub release and attach this DMG."
-    echo "  gh release create v1.1.0 $DMG_OUTPUT --title 'MemBar v1.1.0' --notes-file RELEASE_NOTES.md"
+    echo "  gh release create v1.1.1 $DMG_OUTPUT --title 'MemBar v1.1.1' --notes-file RELEASE_NOTES.md"
 else
     echo "ERROR: DMG not produced" >&2
     exit 1

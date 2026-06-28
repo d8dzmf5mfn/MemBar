@@ -1,10 +1,11 @@
-# MemBar v1.1.0
+# MemBar v1.1.1
 
-Productization release focused on settings, metrics architecture, and release
-diagnostics.
+Patch release focused on making the new settings work visible and reachable.
 
 ## Changes
 
+- Added a visible **设置** button in the popover footer.
+- Added **Settings** to the right-click menu bar menu.
 - Added a real macOS Settings window for default menu-bar mode, network smoothing, and refresh interval.
 - Introduced `PreferencesStore` so user preferences are shared by the app, monitor, and settings UI.
 - Refactored metrics collection behind provider types and a `MetricsEngine`, keeping `SystemMonitor` focused on UI-facing state.

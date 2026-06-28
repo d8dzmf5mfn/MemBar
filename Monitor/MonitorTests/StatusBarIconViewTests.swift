@@ -22,4 +22,9 @@ final class StatusBarIconViewTests: XCTestCase {
             accuracy: 0.0001
         )
     }
+
+    func test_settingsMenuActionUsesStandardSwiftUISettingsSelector() {
+        XCTAssertEqual(AppDelegate.settingsMenuTitle, "Settings")
+        XCTAssertEqual(AppDelegate.showSettingsSelector.description, "showSettingsWindow:")
+    }
 }
