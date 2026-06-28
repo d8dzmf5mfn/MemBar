@@ -32,13 +32,15 @@ struct MemBarApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     static let settingsMenuTitle = "Settings"
-    static let showSettingsSelector = Selector(("showSettingsWindow:"))
+    static let settingsWindowTitle = "MemBar Settings"
+    static let openSettingsSelector = #selector(openSettings(_:))
 
     private var statusItem: NSStatusItem!
     private var monitor: SystemMonitor!
     private var renderer: MenuBarRenderer!
     private var iconView: StatusBarIconView!
     private var popover: NSPopover!
+    private var settingsWindowController: SettingsWindowController?
     private var refreshObserver: NSObjectProtocol?
     /// Held strongly so the KVO token isn't deallocated mid-observation.
     /// Without this, `observe(...)` returns a token that the Swift runtime
@@ -79,7 +81,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 280, height: 300)
         popover.contentViewController = NSHostingController(
-            rootView: MenuBarView(monitor: monitor)
+            rootView: MenuBarView(
+                monitor: monitor,
+                onOpenSettings: { [weak self] in
+                    self?.showSettingsWindow()
+                }
+            )
         )
 
         // 2 Hz is plenty for a numeric bar; the timer also re-evaluates
@@ -130,7 +137,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Right-click → quit menu.
         if event?.type == .rightMouseDown {
             let menu = NSMenu()
-            menu.addItem(withTitle: Self.settingsMenuTitle, action: #selector(openSettings), keyEquivalent: ",")
+            let settingsItem = NSMenuItem(
+                title: Self.settingsMenuTitle,
+                action: Self.openSettingsSelector,
+                keyEquivalent: ","
+            )
+            settingsItem.target = self
+            menu.addItem(settingsItem)
             menu.addItem(.separator())
             menu.addItem(withTitle: "Quit MemBar", action: #selector(quit), keyEquivalent: "q")
             statusItem.menu = menu
@@ -154,9 +167,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quit() { NSApp.terminate(nil) }
 
-    @objc private func openSettings() {
-        NSApp.sendAction(Self.showSettingsSelector, to: nil, from: nil)
-        NSApp.activate(ignoringOtherApps: true)
+    @objc private func openSettings(_ sender: Any?) {
+        showSettingsWindow()
+    }
+
+    private func showSettingsWindow() {
+        if settingsWindowController == nil {
+            settingsWindowController = SettingsWindowController(preferences: .shared)
+        }
+        settingsWindowController?.show()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -165,6 +184,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         renderer?.stop()
         monitor?.stop()
+    }
+}
+
+@MainActor
+final class SettingsWindowController: NSWindowController {
+    init(preferences: PreferencesStore) {
+        let hostingController = NSHostingController(rootView: SettingsView(preferences: preferences))
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = AppDelegate.settingsWindowTitle
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.isReleasedWhenClosed = false
+        window.center()
+
+        super.init(window: window)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    func show() {
+        showWindow(nil)
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
 

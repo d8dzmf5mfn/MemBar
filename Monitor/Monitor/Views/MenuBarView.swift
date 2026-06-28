@@ -11,7 +11,7 @@ import Combine
 ///   3. Bar chart — network mode. Two stacked rolling-window bar charts
 ///      (download + upload) with a peak indicator.
 ///   4. Data rows — 内存 / CPU / 网络 / 温度.
-///   5. Quit button.
+///   5. Settings and quit buttons.
 ///
 /// Refresh strategy
 /// ----------------
@@ -25,9 +25,15 @@ import Combine
 /// "stepped" rather than fluid.
 struct MenuBarView: View {
     let monitor: SystemMonitor
+    let onOpenSettings: () -> Void
     @State private var refreshTick: Int = 0
     @State private var isDarkMode: Bool =
         NSApp.effectiveAppearance.bestMatch(from: [.darkAqua]) != nil
+
+    init(monitor: SystemMonitor, onOpenSettings: @escaping () -> Void = {}) {
+        self.monitor = monitor
+        self.onOpenSettings = onOpenSettings
+    }
 
     // MARK: - Layout constants
 
@@ -443,8 +449,7 @@ struct MenuBarView: View {
             Divider()
             HStack(spacing: 0) {
                 Button("设置") {
-                    NSApp.sendAction(AppDelegate.showSettingsSelector, to: nil, from: nil)
-                    NSApp.activate(ignoringOtherApps: true)
+                    onOpenSettings()
                 }
                 .font(.system(size: 11, weight: .medium))
                 .buttonStyle(.plain)

@@ -70,9 +70,9 @@ Click the menu bar icon to open a 292-pt wide SwiftUI popover:
 
 [**Download MemBar.dmg**](https://github.com/d8dzmf5mfn/MemBar/releases/latest) from the Releases page.
 
-Latest release: **v1.1.1**. This release makes Settings discoverable from the
-popover and right-click menu, adds a provider-based metrics engine, and improves
-local release diagnostics while preserving the lightweight menu-bar experience.
+Latest release: **v1.1.2**. This release fixes Settings opening from the popover
+and right-click menu, adds a provider-based metrics engine, and improves local
+release diagnostics while preserving the lightweight menu-bar experience.
 
 Or via Homebrew (planned):
 ```bash

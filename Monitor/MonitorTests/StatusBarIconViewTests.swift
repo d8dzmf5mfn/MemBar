@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 @testable import MemBar
 
 @MainActor
@@ -23,8 +24,19 @@ final class StatusBarIconViewTests: XCTestCase {
         )
     }
 
-    func test_settingsMenuActionUsesStandardSwiftUISettingsSelector() {
+    func test_settingsWindowControllerCreatesReusableSettingsWindow() {
+        let defaults = UserDefaults(suiteName: "SettingsWindowControllerTests-\(UUID().uuidString)")!
+        let preferences = PreferencesStore(defaults: defaults)
+        let controller = SettingsWindowController(preferences: preferences)
+
         XCTAssertEqual(AppDelegate.settingsMenuTitle, "Settings")
-        XCTAssertEqual(AppDelegate.showSettingsSelector.description, "showSettingsWindow:")
+        XCTAssertEqual(controller.window?.title, AppDelegate.settingsWindowTitle)
+        XCTAssertEqual(controller.window?.isReleasedWhenClosed, false)
+        XCTAssertTrue(controller.window?.contentViewController is NSHostingController<SettingsView>)
+    }
+
+    func test_settingsMenuActionUsesAppDelegateSelector() {
+        XCTAssertEqual(AppDelegate.settingsMenuTitle, "Settings")
+        XCTAssertEqual(AppDelegate.openSettingsSelector.description, "openSettings:")
     }
 }
