@@ -28,6 +28,7 @@ XCODEPROJ="$REPO_ROOT/Monitor/Monitor.xcodeproj"
 SCHEME="Monitor"
 CONFIG="Release"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/private/tmp/membar-dmg-derived-data}"
+BUILD_LOG="${BUILD_LOG:-/private/tmp/membar-build-$(date +%Y%m%d-%H%M%S).log}"
 BUILD_DIR="$DERIVED_DATA_PATH/Build/Products/$CONFIG"
 APP_PATH="$BUILD_DIR/MemBar.app"
 STAGE_DIR="$(mktemp -d -t membar-dmg)"
@@ -42,18 +43,27 @@ trap cleanup EXIT
 # ----- Build -----
 if [[ $SKIP_BUILD -eq 0 ]]; then
     echo "==> Building $SCHEME ($CONFIG) (unsigned)..."
+    echo "==> Full xcodebuild log: $BUILD_LOG"
     cd "$REPO_ROOT/Monitor"
     # CODE_SIGNING_ALLOWED=NO skips Xcode's signing step entirely so
     # the build doesn't fail on Xcode 27's `com.apple.provenance`
     # xattr issue. We do our own ad-hoc re-sign in the next block.
-    xcodebuild \
+    if ! xcodebuild \
         -project Monitor.xcodeproj \
         -scheme "$SCHEME" \
         -configuration "$CONFIG" \
         -destination 'platform=macOS' \
         -derivedDataPath "$DERIVED_DATA_PATH" \
         CODE_SIGNING_ALLOWED=NO \
-        clean build 2>&1 | tail -20
+        clean build >"$BUILD_LOG" 2>&1; then
+        echo "ERROR: xcodebuild failed. Full log: $BUILD_LOG" >&2
+        echo "" >&2
+        echo "Last 40 log lines:" >&2
+        tail -40 "$BUILD_LOG" >&2
+        exit 1
+    fi
+    echo "==> Build succeeded. Last 20 log lines:"
+    tail -20 "$BUILD_LOG"
 else
     echo "==> Skipping build (--skip-build), reusing $APP_PATH"
 fi
@@ -97,7 +107,7 @@ if [[ -f "$DMG_OUTPUT" ]]; then
     echo "Note: GitHub release builds still need Developer ID signing and notarization."
     echo ""
     echo "Next: create a GitHub release and attach this DMG."
-    echo "  gh release create v1.0.2 $DMG_OUTPUT --title 'MemBar v1.0.2' --notes-file RELEASE_NOTES.md"
+    echo "  gh release create v1.1.0 $DMG_OUTPUT --title 'MemBar v1.1.0' --notes-file RELEASE_NOTES.md"
 else
     echo "ERROR: DMG not produced" >&2
     exit 1

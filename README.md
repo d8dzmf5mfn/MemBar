@@ -70,9 +70,9 @@ Click the menu bar icon to open a 292-pt wide SwiftUI popover:
 
 [**Download MemBar.dmg**](https://github.com/d8dzmf5mfn/MemBar/releases/latest) from the Releases page.
 
-Latest release: **v1.0.2**. This release cleans up an invalid bundled font
-resource, hardens CPU and network counter handling, and keeps command-line
-tests on `/private/tmp` DerivedData to avoid local codesign failures.
+Latest release: **v1.1.0**. This release adds a real Settings window,
+introduces a provider-based metrics engine, and improves local release
+diagnostics while preserving the lightweight menu-bar experience.
 
 Or via Homebrew (planned):
 ```bash

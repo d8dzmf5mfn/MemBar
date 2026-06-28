@@ -1,15 +1,17 @@
-# MemBar v1.0.2
+# MemBar v1.1.0
 
-Maintenance release focused on release quality and measurement correctness.
+Productization release focused on settings, metrics architecture, and release
+diagnostics.
 
 ## Changes
 
-- Removed the invalid `Caveat-Regular.ttf` resource that contained a GitHub HTML page instead of font data.
-- Register only the valid bundled `RockSalt-Regular.ttf` font at launch.
-- Hardened CPU tick delta calculations so counter rollback does not create synthetic CPU spikes.
-- Expanded network throughput accounting to active non-loopback interfaces, covering VPN, bridge, and virtual interfaces instead of only `en*` / `ap*`.
-- Added regression coverage for font resources, CPU counter rollback, and network interface filtering.
-- Documented running command-line tests with DerivedData under `/private/tmp` to avoid workspace extended-attribute codesign failures.
+- Added a real macOS Settings window for default menu-bar mode, network smoothing, and refresh interval.
+- Introduced `PreferencesStore` so user preferences are shared by the app, monitor, and settings UI.
+- Refactored metrics collection behind provider types and a `MetricsEngine`, keeping `SystemMonitor` focused on UI-facing state.
+- Kept the existing popover and menu-bar rendering surface intact while allowing 1 s, 2 s, or 5 s refresh intervals.
+- Added tests for preferences, metric providers, and metrics engine lifecycle behavior.
+- Improved local DMG build diagnostics by writing the full xcodebuild log to `/private/tmp`.
+- Added a release checklist covering local DMG builds, Developer ID signing, notarization, GitHub releases, and Homebrew cask requirements.
 
 ## Validation
 
@@ -26,4 +28,4 @@ DEVELOPER_DIR="$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
 
 Download `MemBar.dmg` from this release, open it, and drag `MemBar.app` into Applications.
 
-This local release build is ad-hoc signed. If macOS shows an unidentified developer warning, right-click `MemBar.app` and choose Open.
+This release asset is ad-hoc signed. If macOS shows an unidentified developer warning, right-click `MemBar.app` and choose Open.

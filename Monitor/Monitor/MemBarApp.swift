@@ -5,11 +5,14 @@ import CoreText
 @main
 struct MemBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    private let preferences = PreferencesStore.shared
 
     init() { registerFonts() }
 
     var body: some Scene {
-        Settings { EmptyView() }
+        Settings {
+            SettingsView(preferences: preferences)
+        }
     }
 
     private func registerFonts() {
@@ -94,7 +97,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.renderer?.renderIfNeeded()
+            Task { @MainActor [weak self] in
+                self?.renderer?.renderIfNeeded()
+            }
         }
 
         // Re-render the menu-bar icon when the system appearance changes
@@ -110,7 +115,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // and `NSSystemColorsDidChange`, but the former is not exposed
         // to Swift and the latter fires too aggressively.)
         themeObservation = NSApp.observe(\.effectiveAppearance, options: [.new, .initial]) { [weak self] _, _ in
-            self?.renderer?.renderIfNeeded(force: true)
+            Task { @MainActor [weak self] in
+                self?.renderer?.renderIfNeeded(force: true)
+            }
         }
     }
 

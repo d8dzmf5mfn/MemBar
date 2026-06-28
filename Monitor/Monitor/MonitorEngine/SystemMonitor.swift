@@ -22,11 +22,10 @@ final class SystemMonitor {
     private(set) var thermal = ThermalSnapshot(state: .nominal, batteryTempCelsius: nil, timestamp: Date())
 
     // MARK: - Internal state
-    private var timer: Timer?
-    private var previousCPUTicks: [CPUResult]?
-    private var previousNetworkSample: NetworkSample?
-    private var cachedBatteryTemperature: Double?
-
+    private let preferences: PreferencesStore
+    private let engine: MetricsEngine
+    private var preferenceObserver: NSObjectProtocol?
+    private var isStarted = false
     private var rawDownloadHistory: [Double] = []
     private var rawUploadHistory: [Double] = []
     private var smoothDownload: Double = 0
@@ -49,13 +48,13 @@ final class SystemMonitor {
     }
 
     var menuBarMode: MenuBarMode {
-        get { MenuBarMode(rawValue: UserDefaults.standard.string(forKey: "menuBarMode") ?? "") ?? .memory }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "menuBarMode") }
+        get { preferences.menuBarMode }
+        set { preferences.menuBarMode = newValue }
     }
 
     var useSmoothNetwork: Bool {
-        get { UserDefaults.standard.bool(forKey: "useSmoothNetwork") }
-        set { UserDefaults.standard.set(newValue, forKey: "useSmoothNetwork") }
+        get { preferences.useSmoothNetwork }
+        set { preferences.useSmoothNetwork = newValue }
     }
 
     // MARK: - Convenience accessors
@@ -72,67 +71,60 @@ final class SystemMonitor {
 
     // MARK: - Tunables
     let maxHistoryCount = 60
-    let refreshInterval: TimeInterval = 2.0
-    private let temperatureRefreshController: TemperatureRefreshController
+    var refreshInterval: TimeInterval { preferences.refreshInterval }
 
-    init(temperatureProvider: BatteryTemperatureProviding = IOKitBatteryTemperatureProvider()) {
-        self.temperatureRefreshController = TemperatureRefreshController(
-            minimumInterval: 15,
-            currentTime: { Date().timeIntervalSince1970 },
-            fetchTemperature: { temperatureProvider.batteryTemperatureCelsius() }
+    init(preferences: PreferencesStore = .shared, engine: MetricsEngine? = nil) {
+        self.preferences = preferences
+        self.engine = engine ?? MetricsEngine(preferences: preferences)
+        observePreferenceChanges()
+    }
+
+    convenience init(temperatureProvider: BatteryTemperatureProviding) {
+        var cpuProvider = CPUMetricProvider()
+        var memoryProvider = MemoryMetricProvider()
+        var networkProvider = NetworkMetricProvider()
+        var thermalProvider = ThermalMetricProvider(temperatureProvider: temperatureProvider)
+        let preferences = PreferencesStore.shared
+        let engine = MetricsEngine(
+            preferences: preferences,
+            cpuProvider: AnyMetricProvider { cpuProvider.sample() },
+            memoryProvider: AnyMetricProvider { memoryProvider.sample() },
+            networkProvider: AnyMetricProvider { networkProvider.sample() },
+            thermalProvider: AnyMetricProvider { thermalProvider.sample() }
         )
+        self.init(preferences: preferences, engine: engine)
     }
 
     // MARK: - Lifecycle
     func start() {
-        refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.refresh()
-            }
+        isStarted = true
+        engine.start { [weak self] snapshot in
+            self?.apply(snapshot)
         }
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
+        isStarted = false
+        engine.stop()
     }
 
     // MARK: - Refresh
-    private func refresh() {
-        // 1. CPU (using cumulative ticks for delta computation)
-        let cpuResult = collectCPUInfo(previousTicks: previousCPUTicks)
-        cpu = cpuResult.snapshot
-        previousCPUTicks = cpuResult.ticks
+    private func apply(_ snapshot: MetricsSnapshot) {
+        cpu = snapshot.cpu
+        memory = snapshot.memory
 
-        // 2. Memory
-        memory = collectMemoryInfo()
-
-        // 3. Network — `collectNetworkInfo` walks the interface table and
-        //    computes the throughput delta itself; we just feed it the
-        //    previous sample so it has a baseline.
-        let net = collectNetworkInfo(previous: previousNetworkSample)
-        previousNetworkSample = net
-
-        smoothDownload = smoothAlpha * net.downloadSpeed + (1 - smoothAlpha) * smoothDownload
-        smoothUpload   = smoothAlpha * net.uploadSpeed   + (1 - smoothAlpha) * smoothUpload
+        smoothDownload = smoothAlpha * snapshot.network.downloadSpeed + (1 - smoothAlpha) * smoothDownload
+        smoothUpload   = smoothAlpha * snapshot.network.uploadSpeed   + (1 - smoothAlpha) * smoothUpload
 
         network = NetworkSnapshot(
-            downloadSpeed: net.downloadSpeed,
-            uploadSpeed: net.uploadSpeed,
+            downloadSpeed: snapshot.network.downloadSpeed,
+            uploadSpeed: snapshot.network.uploadSpeed,
             smoothedDownloadSpeed: smoothDownload,
             smoothedUploadSpeed: smoothUpload,
-            timestamp: Date()
+            timestamp: snapshot.network.timestamp
         )
 
-        if let batteryTemperature = temperatureRefreshController.refreshIfNeeded() {
-            cachedBatteryTemperature = batteryTemperature
-        }
-        thermal = ThermalSnapshot(
-            state: ProcessInfo.processInfo.thermalState,
-            batteryTempCelsius: cachedBatteryTemperature,
-            timestamp: Date()
-        )
+        thermal = snapshot.thermal
 
         // 5. History buffers (raw + smoothed, in KB/s — the menu bar
         //    format and popover bar chart both consume KB/s).
@@ -144,6 +136,24 @@ final class SystemMonitor {
         // 6. Force MenuBarExtra views to update (NSMenu/popover context
         //    freezes @Observable, so a notification is the reliable path).
         NotificationCenter.default.post(name: .systemMonitorDidRefresh, object: nil)
+    }
+
+    private func observePreferenceChanges() {
+        preferenceObserver = NotificationCenter.default.addObserver(
+            forName: .preferencesDidChange,
+            object: preferences,
+            queue: .main
+        ) { [weak self] note in
+            let key = note.userInfo?["key"] as? String
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if key == PreferencesStore.Keys.refreshInterval, self.isStarted {
+                    self.start()
+                } else {
+                    NotificationCenter.default.post(name: .systemMonitorDidRefresh, object: nil)
+                }
+            }
+        }
     }
 
     /// Append a sample to a rolling buffer, trimming to `maxHistoryCount`.

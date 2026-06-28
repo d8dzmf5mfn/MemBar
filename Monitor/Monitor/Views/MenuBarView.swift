@@ -318,7 +318,8 @@ struct MenuBarView: View {
                         maxValue: maxValue,
                         barWidth: barWidth,
                         usableHeight: usableHeight,
-                        tint: tint
+                        tint: tint,
+                        refreshInterval: monitor.refreshInterval
                     )
                 }
             }
@@ -520,6 +521,7 @@ private struct LiveBar: View {
     let barWidth: CGFloat
     let usableHeight: CGFloat
     let tint: Color
+    let refreshInterval: TimeInterval
 
     @State private var previousValue: Double = 0
     @State private var lastUpdate: Date = .now
@@ -527,7 +529,7 @@ private struct LiveBar: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(lastUpdate)
-            let progress = min(elapsed / 2.0, 1.0)       // 2 s = full refresh
+            let progress = min(elapsed / max(refreshInterval, 0.1), 1.0)
             // Ease-out quadratic: fast start, gentle finish
             let easedProgress = 1.0 - (1.0 - progress) * (1.0 - progress)
             let effectiveValue = previousValue + (value - previousValue) * easedProgress
